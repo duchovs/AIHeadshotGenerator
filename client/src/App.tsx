@@ -1,0 +1,45 @@
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import Home from "@/pages/Home";
+import Upload from "@/pages/Upload";
+import Train from "@/pages/Train";
+import Generate from "@/pages/Generate";
+import Gallery from "@/pages/Gallery";
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/upload" component={Upload} />
+      <Route path="/train/:modelId?" component={Train} />
+      <Route path="/generate/:modelId?" component={Generate} />
+      <Route path="/gallery" component={Gallery} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-grow bg-gray-50">
+            <Router />
+          </main>
+          <Footer />
+        </div>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

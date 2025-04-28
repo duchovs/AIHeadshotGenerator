@@ -1,0 +1,122 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import StepIndicator from '@/components/StepIndicator';
+import { useParams, useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
+
+const Train = () => {
+  const { modelId } = useParams();
+  const [progress, setProgress] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes in seconds
+  const [, setLocation] = useLocation();
+  
+  const modelIdInt = modelId ? parseInt(modelId) : undefined;
+  
+  const { data: model, isLoading } = useQuery({
+    queryKey: ['/api/models', modelIdInt],
+    queryFn: async () => {
+      if (!modelIdInt) return null;
+      const response = await fetch(`/api/models/${modelIdInt}`);
+      if (!response.ok) throw new Error('Failed to fetch model');
+      return response.json();
+    },
+    enabled: !!modelIdInt,
+    refetchInterval: (data) => {
+      // Refetch until training is complete
+      return data?.status === 'completed' ? false : 5000;
+    }
+  });
+
+  useEffect(() => {
+    if (!modelIdInt) {
+      // Redirect to upload if no model ID is provided
+      setLocation('/upload');
+      return;
+    }
+    
+    if (model?.status === 'completed') {
+      // Navigate to generate when training is complete
+      setLocation(`/generate/${modelIdInt}`);
+    }
+  }, [modelIdInt, model, setLocation]);
+
+  // Simulate training progress
+  useEffect(() => {
+    if (!modelIdInt || model?.status === 'completed') return;
+    
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        // Max progress while waiting is 90% until we get confirmation
+        const newProgress = prev + (90 - prev) * 0.05;
+        return Math.min(newProgress, 90);
+      });
+      
+      setTimeRemaining(prev => {
+        const newTime = prev - 1;
+        return Math.max(newTime, 0);
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [modelIdInt, model]);
+  
+  // Format time remaining as MM:SS
+  const formatTimeRemaining = () => {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <StepIndicator currentStep="train" modelId={modelIdInt} />
+      
+      <Card className="mb-10">
+        <CardContent className="pt-6">
+          <div className="text-center mb-8">
+            <h3 className="text-xl font-semibold mb-2">Training Your AI Model</h3>
+            <p className="text-gray-600">
+              Please wait while we train your personalized AI model. This typically takes 15-20 minutes.
+            </p>
+          </div>
+          
+          <div className="max-w-md mx-auto mb-8">
+            <div className="mb-2 flex justify-between">
+              <span className="text-sm font-medium">Training Progress</span>
+              <span className="text-sm font-medium">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+            
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500">
+                Estimated time remaining: {formatTimeRemaining()}
+              </p>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 max-w-md mx-auto mb-8">
+            <h4 className="font-medium text-yellow-800 mb-2">Training in Progress</h4>
+            <p className="text-sm text-yellow-700">
+              Please keep this page open while training completes. You'll be automatically redirected when it's done.
+            </p>
+          </div>
+          
+          <div className="text-center">
+            <Button 
+              disabled={true}
+              className="min-w-[200px]"
+            >
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Training in Progress
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default Train;
