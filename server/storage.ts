@@ -12,6 +12,8 @@ import {
   type Headshot,
   type InsertHeadshot
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -40,150 +42,115 @@ export interface IStorage {
   deleteHeadshot(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private uploadedPhotos: Map<number, UploadedPhoto>;
-  private models: Map<number, Model>;
-  private headshots: Map<number, Headshot>;
-  
-  private userCurrentId: number;
-  private uploadedPhotoCurrentId: number;
-  private modelCurrentId: number;
-  private headshotCurrentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.uploadedPhotos = new Map();
-    this.models = new Map();
-    this.headshots = new Map();
-    
-    this.userCurrentId = 1;
-    this.uploadedPhotoCurrentId = 1;
-    this.modelCurrentId = 1;
-    this.headshotCurrentId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
   
   // Uploaded Photo methods
   async getUploadedPhoto(id: number): Promise<UploadedPhoto | undefined> {
-    return this.uploadedPhotos.get(id);
+    const [photo] = await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+    return photo;
   }
   
   async getUploadedPhotosByUserId(userId: number): Promise<UploadedPhoto[]> {
-    return Array.from(this.uploadedPhotos.values()).filter(
-      (photo) => photo.userId === userId
-    );
+    return await db.select().from(uploadedPhotos).where(eq(uploadedPhotos.userId, userId));
   }
   
   async createUploadedPhoto(insertPhoto: InsertUploadedPhoto): Promise<UploadedPhoto> {
-    const id = this.uploadedPhotoCurrentId++;
-    const now = new Date();
-    const photo: UploadedPhoto = { 
-      ...insertPhoto, 
-      id,
-      uploadedAt: now
-    };
-    this.uploadedPhotos.set(id, photo);
+    const [photo] = await db.insert(uploadedPhotos).values(insertPhoto).returning();
     return photo;
   }
   
   async deleteUploadedPhoto(id: number): Promise<boolean> {
-    return this.uploadedPhotos.delete(id);
+    const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
+    return result.rowCount > 0;
   }
   
   // Model methods
   async getModel(id: number): Promise<Model | undefined> {
-    return this.models.get(id);
+    const [model] = await db.select().from(models).where(eq(models.id, id));
+    return model;
   }
   
   async getModelsByUserId(userId: number): Promise<Model[]> {
-    return Array.from(this.models.values()).filter(
-      (model) => model.userId === userId
-    );
+    return await db.select().from(models).where(eq(models.userId, userId));
   }
   
   async createModel(insertModel: InsertModel): Promise<Model> {
-    const id = this.modelCurrentId++;
-    const now = new Date();
-    const model: Model = {
-      ...insertModel,
-      id,
-      createdAt: now,
-      completedAt: null
-    };
-    this.models.set(id, model);
+    const [model] = await db.insert(models).values(insertModel).returning();
     return model;
   }
   
   async updateModel(id: number, updates: Partial<Model>): Promise<Model | undefined> {
-    const model = this.models.get(id);
-    if (!model) return undefined;
+    const [updatedModel] = await db
+      .update(models)
+      .set(updates)
+      .where(eq(models.id, id))
+      .returning();
     
-    const updatedModel = { ...model, ...updates };
-    this.models.set(id, updatedModel);
     return updatedModel;
   }
   
   // Headshot methods
   async getHeadshot(id: number): Promise<Headshot | undefined> {
-    return this.headshots.get(id);
+    const [headshot] = await db.select().from(headshots).where(eq(headshots.id, id));
+    return headshot;
   }
   
   async getHeadshotsByUserId(userId: number, limit?: number): Promise<Headshot[]> {
-    const headshots = Array.from(this.headshots.values())
-      .filter((headshot) => headshot.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    let query = db
+      .select()
+      .from(headshots)
+      .where(eq(headshots.userId, userId))
+      .orderBy(desc(headshots.createdAt));
     
-    return limit ? headshots.slice(0, limit) : headshots;
+    if (limit) {
+      query = query.limit(limit);
+    }
+    
+    return await query;
   }
   
   async getHeadshotsByModelId(modelId: number): Promise<Headshot[]> {
-    return Array.from(this.headshots.values())
-      .filter((headshot) => headshot.modelId === modelId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return await db
+      .select()
+      .from(headshots)
+      .where(eq(headshots.modelId, modelId))
+      .orderBy(desc(headshots.createdAt));
   }
   
   async createHeadshot(insertHeadshot: InsertHeadshot): Promise<Headshot> {
-    const id = this.headshotCurrentId++;
-    const now = new Date();
-    const headshot: Headshot = {
-      ...insertHeadshot,
-      id,
-      createdAt: now
-    };
-    this.headshots.set(id, headshot);
+    const [headshot] = await db.insert(headshots).values(insertHeadshot).returning();
     return headshot;
   }
   
   async updateHeadshot(id: number, updates: Partial<Headshot>): Promise<Headshot | undefined> {
-    const headshot = this.headshots.get(id);
-    if (!headshot) return undefined;
+    const [updatedHeadshot] = await db
+      .update(headshots)
+      .set(updates)
+      .where(eq(headshots.id, id))
+      .returning();
     
-    const updatedHeadshot = { ...headshot, ...updates };
-    this.headshots.set(id, updatedHeadshot);
     return updatedHeadshot;
   }
   
   async deleteHeadshot(id: number): Promise<boolean> {
-    return this.headshots.delete(id);
+    const result = await db.delete(headshots).where(eq(headshots.id, id));
+    return result.rowCount > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
