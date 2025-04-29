@@ -101,9 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all uploaded photos
-  app.get('/api/uploads', async (req: Request, res: Response) => {
+  app.get('/api/uploads', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = 1; // Mock user ID
+      const userId = req.user?.id || 1;
       const photos = await storage.getUploadedPhotosByUserId(userId);
       res.status(200).json(photos);
     } catch (error) {
@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Train a model using Replicate API
-  app.post('/api/models/train', async (req: Request, res: Response) => {
+  app.post('/api/models/train', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { photoIds } = trainModelSchema.parse(req.body);
       

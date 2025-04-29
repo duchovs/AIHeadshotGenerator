@@ -5,6 +5,16 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { users, type User } from '@shared/schema';
 
+// Helper to transform database User to Express.User (strips null values)
+const sanitizeUser = (user: User): Express.User => ({
+  id: user.id,
+  username: user.username,
+  email: user.email || undefined,
+  googleId: user.googleId || undefined,
+  displayName: user.displayName || undefined,
+  profilePicture: user.profilePicture || undefined
+});
+
 // Google OAuth Strategy configuration
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',
@@ -23,7 +33,7 @@ passport.use(new GoogleStrategy({
           displayName: profile.displayName,
           profilePicture: profile.photos?.[0]?.value
         });
-        return done(null, updatedUser || existingUser);
+        return done(null, sanitizeUser(updatedUser || existingUser));
       }
       
       // Create a new user
@@ -38,7 +48,7 @@ passport.use(new GoogleStrategy({
         profilePicture: profile.photos?.[0]?.value
       });
       
-      return done(null, newUser);
+      return done(null, sanitizeUser(newUser));
     } catch (error) {
       return done(error as Error);
     }
@@ -68,7 +78,7 @@ passport.serializeUser((user: Express.User, done) => {
 passport.deserializeUser(async (id: number, done) => {
   try {
     const user = await storage.getUser(id);
-    done(null, user || undefined);
+    done(null, user ? sanitizeUser(user) : null);
   } catch (error) {
     done(error);
   }
