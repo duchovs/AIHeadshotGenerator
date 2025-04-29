@@ -5,7 +5,12 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
+  email: text("email"),
+  googleId: text("google_id").unique(),
+  displayName: text("display_name"),
+  profilePicture: text("profile_picture"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const uploadedPhotos = pgTable("uploaded_photos", {
@@ -44,6 +49,10 @@ export const headshots = pgTable("headshots", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  googleId: true,
+  displayName: true,
+  profilePicture: true,
 });
 
 export const insertUploadedPhotoSchema = createInsertSchema(uploadedPhotos).omit({
