@@ -6,6 +6,7 @@ import fs from "fs";
 import os from "os";
 import multer from "multer";
 import axios from "axios";
+import passport from "./auth";
 import {
   insertUploadedPhotoSchema,
   insertModelSchema,
@@ -21,9 +22,54 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// Helper middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: any) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: 'Not authenticated' });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth routes
+  app.get('/auth/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
+
+  app.get('/auth/google/callback',
+    passport.authenticate('google', {
+      successRedirect: '/',
+      failureRedirect: '/login'
+    })
+  );
+
+  // Get current user info
+  app.get('/api/auth/user', (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({
+        isAuthenticated: true,
+        user: req.user
+      });
+    } else {
+      res.json({
+        isAuthenticated: false,
+        user: null
+      });
+    }
+  });
+
+  // Logout route
+  app.get('/api/auth/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ message: 'Error logging out' });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
   // API routes for photo uploads
-  app.post('/api/uploads', upload.array('photos', 20), async (req: Request, res: Response) => {
+  app.post('/api/uploads', isAuthenticated, upload.array('photos', 20), async (req: Request, res: Response) => {
     try {
       if (!req.files || !Array.isArray(req.files)) {
         return res.status(400).json({ message: 'No files uploaded' });
@@ -34,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const file of req.files) {
         // Use zod schema to validate input
         const photoData = insertUploadedPhotoSchema.parse({
-          userId: 1, // Mock user ID for now
+          userId: req.user?.id || 1,
           filename: file.originalname,
           fileSize: file.size,
           path: file.path

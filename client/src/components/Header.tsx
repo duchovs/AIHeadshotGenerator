@@ -6,6 +6,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import LoginButton from "./LoginButton";
 
 const Header = () => {
   const [location] = useLocation();
@@ -45,9 +46,14 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Link href="/upload">
-              <Button>Get Started</Button>
-            </Link>
+            <LoginButton />
+            
+            <div className="hidden sm:block">
+              <Link href="/upload">
+                <Button variant="outline">Get Started</Button>
+              </Link>
+            </div>
+            
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -62,6 +68,9 @@ const Header = () => {
                   </Link>
                   <Link href="/gallery">
                     <span className="font-medium text-gray-600 py-2 cursor-pointer">Gallery</span>
+                  </Link>
+                  <Link href="/upload">
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Get Started</span>
                   </Link>
                   <a href="#" className="font-medium text-gray-600 py-2">About</a>
                   <a href="#" className="font-medium text-gray-600 py-2">Help</a>
