@@ -35,7 +35,12 @@ const FileUploader = ({ onUploadComplete }: FileUploaderProps) => {
         formData.append('photos', file);
       });
 
-      const response = await apiRequest('POST', '/api/uploads', undefined);
+      // Use fetch directly for FormData uploads instead of apiRequest
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error('Upload failed');

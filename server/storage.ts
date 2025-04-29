@@ -76,7 +76,7 @@ export class DatabaseStorage implements IStorage {
   
   async deleteUploadedPhoto(id: number): Promise<boolean> {
     const result = await db.delete(uploadedPhotos).where(eq(uploadedPhotos.id, id));
-    return result.rowCount > 0;
+    return result.rowCount ? result.rowCount > 0 : false;
   }
   
   // Model methods
@@ -111,17 +111,20 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getHeadshotsByUserId(userId: number, limit?: number): Promise<Headshot[]> {
-    let query = db
-      .select()
-      .from(headshots)
-      .where(eq(headshots.userId, userId))
-      .orderBy(desc(headshots.createdAt));
-    
     if (limit) {
-      query = query.limit(limit);
+      return await db
+        .select()
+        .from(headshots)
+        .where(eq(headshots.userId, userId))
+        .orderBy(desc(headshots.createdAt))
+        .limit(limit);
+    } else {
+      return await db
+        .select()
+        .from(headshots)
+        .where(eq(headshots.userId, userId))
+        .orderBy(desc(headshots.createdAt));
     }
-    
-    return await query;
   }
   
   async getHeadshotsByModelId(modelId: number): Promise<Headshot[]> {
@@ -149,7 +152,7 @@ export class DatabaseStorage implements IStorage {
   
   async deleteHeadshot(id: number): Promise<boolean> {
     const result = await db.delete(headshots).where(eq(headshots.id, id));
-    return result.rowCount > 0;
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

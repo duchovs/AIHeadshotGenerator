@@ -35,10 +35,10 @@ const Header = () => {
 
           <nav className="hidden md:flex space-x-8">
             <Link href="/">
-              <a className={`font-medium ${location === "/" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Home</a>
+              <span className={`font-medium cursor-pointer ${location === "/" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Home</span>
             </Link>
             <Link href="/gallery">
-              <a className={`font-medium ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</a>
+              <span className={`font-medium cursor-pointer ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</span>
             </Link>
             <a href="#" className="font-medium text-gray-500 hover:text-gray-900">About</a>
             <a href="#" className="font-medium text-gray-500 hover:text-gray-900">Help</a>
@@ -58,10 +58,10 @@ const Header = () => {
               <SheetContent side="right">
                 <nav className="flex flex-col space-y-4 mt-8">
                   <Link href="/">
-                    <a className="font-medium text-gray-900 py-2">Home</a>
+                    <span className="font-medium text-gray-900 py-2 cursor-pointer">Home</span>
                   </Link>
                   <Link href="/gallery">
-                    <a className="font-medium text-gray-600 py-2">Gallery</a>
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Gallery</span>
                   </Link>
                   <a href="#" className="font-medium text-gray-600 py-2">About</a>
                   <a href="#" className="font-medium text-gray-600 py-2">Help</a>
