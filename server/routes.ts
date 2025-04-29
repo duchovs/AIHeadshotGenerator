@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete an uploaded photo
-  app.delete('/api/uploads/:id', async (req: Request, res: Response) => {
+  app.delete('/api/uploads/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -162,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create model entry in the database
       const model = await storage.createModel({
-        userId: 1, // Mock user ID
+        userId: req.user?.id || 1,
         replicateModelId: 'training',
         status: 'training'
       });
@@ -215,9 +215,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all models for a user
-  app.get('/api/models', async (req: Request, res: Response) => {
+  app.get('/api/models', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = 1; // Mock user ID
+      const userId = req.user?.id || 1;
       const models = await storage.getModelsByUserId(userId);
       res.status(200).json(models);
     } catch (error) {
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate a headshot using a trained model
-  app.post('/api/headshots/generate', async (req: Request, res: Response) => {
+  app.post('/api/headshots/generate', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { modelId, style, prompt } = generateHeadshotSchema.parse(req.body);
       
@@ -265,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Store the generated headshot
       const headshot = await storage.createHeadshot({
-        userId: 1, // Mock user ID
+        userId: req.user?.id || 1,
         modelId,
         style,
         imageUrl,
@@ -286,9 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all headshots for a user
-  app.get('/api/headshots', async (req: Request, res: Response) => {
+  app.get('/api/headshots', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = 1; // Mock user ID
+      const userId = req.user?.id || 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       
       const headshots = await storage.getHeadshotsByUserId(userId, limit);
