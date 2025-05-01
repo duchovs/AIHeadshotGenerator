@@ -6,14 +6,21 @@ interface StyleCardProps {
   isSelected?: boolean;
 }
 
+export const stylePrompts: Record<string, string> = {
+  Corporate: "Professional corporate headshot of TOK with a clean background and formal attire.",
+  Casual: "Relaxed and friendly headshot of TOK with casual clothing and a soft background.",
+  Artistic: "Creative headshot of TOK with artistic lighting and expressive pose.",
+  Outdoor: "Headshot of TOK taken outdoors with natural lighting and greenery.",
+  Fantasy: "Headshot of TOK with fantasy elements, imaginative background, and creative styling."
+};
+
 const StyleCard = ({ style, onClick, isSelected }: StyleCardProps) => {
   const styles: Record<string, string> = {
     'corporate': 'bg-blue-50 text-blue-600',
     'casual': 'bg-green-50 text-green-600',
-    'business': 'bg-purple-50 text-purple-600',
-    'creative': 'bg-pink-50 text-pink-600', 
+    'artistic': 'bg-pink-50 text-pink-600', 
     'outdoor': 'bg-amber-50 text-amber-600',
-    'studio': 'bg-sky-50 text-sky-600'
+    'fantasy': 'bg-sky-50 text-sky-600'
   };
   
   const bgColor = styles[style.toLowerCase()] || 'bg-gray-50 text-gray-600';
@@ -48,10 +55,9 @@ const HeadshotStyles = ({ onSelectStyle, selectedStyle }: HeadshotStylesProps) =
   const styles = [
     'Corporate',
     'Casual',
-    'Business',
-    'Creative',
+    'Artistic',
     'Outdoor',
-    'Studio'
+    'Fantasy'
   ];
 
   return (

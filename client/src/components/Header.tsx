@@ -41,7 +41,7 @@ const Header = () => {
             <Link href="/gallery">
               <span className={`font-medium cursor-pointer ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</span>
             </Link>
-            <a href="#" className="font-medium text-gray-500 hover:text-gray-900">About</a>
+            <a href="/generate/1" className="font-medium text-gray-500 hover:text-gray-900">Generate</a>
             <a href="#" className="font-medium text-gray-500 hover:text-gray-900">Help</a>
           </nav>
 

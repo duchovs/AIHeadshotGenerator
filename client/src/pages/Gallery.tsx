@@ -6,19 +6,22 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
-import HeadshotGallery from '@/components/HeadshotGallery';
+import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
 import { useQuery } from '@tanstack/react-query';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const Gallery = () => {
-  const [headshots, setHeadshots] = useState([]);
-  const [favorites, setFavorites] = useState([]);
+  const [headshots, setHeadshots] = useState<HeadshotItem[]>([]);
+  const [favorites, setFavorites] = useState<HeadshotItem[]>([]);
   
-  const { data, isLoading } = useQuery({
-    queryKey: ['/api/headshots'],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['headshots'],
     queryFn: async () => {
       const response = await fetch('/api/headshots');
       if (!response.ok) throw new Error('Failed to fetch headshots');
-      return response.json();
+      const data = await response.json();
+      return data as HeadshotItem[];
     }
   });
   
@@ -38,13 +41,22 @@ const Gallery = () => {
         </p>
       </div>
       
-      <Card>
-        <CardContent className="pt-6">
-          <Tabs defaultValue="all">
-            <TabsList className="mb-8">
-              <TabsTrigger value="all">All Headshots</TabsTrigger>
-              <TabsTrigger value="favorites">Favorites</TabsTrigger>
-            </TabsList>
+      {error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load headshots. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <Tabs defaultValue="all">
+              <TabsList className="mb-8">
+                <TabsTrigger value="all">All Headshots</TabsTrigger>
+                <TabsTrigger value="favorites">Favorites</TabsTrigger>
+              </TabsList>
             
             <TabsContent value="all">
               <HeadshotGallery 
@@ -65,6 +77,7 @@ const Gallery = () => {
           </Tabs>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };

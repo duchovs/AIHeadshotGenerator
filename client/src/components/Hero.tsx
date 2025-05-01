@@ -15,7 +15,7 @@ const Hero = () => {
             </p>
             <div className="flex flex-wrap gap-4">
               <Link href="/upload">
-                <Button size="lg" variant="secondary" className="bg-white text-primary-600 font-medium hover:bg-gray-100">
+                <Button size="lg" variant="secondary" className="bg-transparent border border-white text-white font-medium hover:bg-white hover:bg-opacity-10">
                   Start Creating
                 </Button>
               </Link>

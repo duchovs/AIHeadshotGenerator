@@ -77,7 +77,7 @@ const Generate = () => {
         body: JSON.stringify({
           modelId: modelIdInt,
           style: selectedStyle,
-          prompt: values.prompt || '',
+          prompt: values.prompt,
         }),
       });
       

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import path from "path";
 import fs from "fs";
+import { stylePrompts } from "../client/src/components/HeadshotStyles";
 import os from "os";
 import multer from "multer";
 import axios from "axios";
@@ -15,6 +16,8 @@ import {
   generateHeadshotSchema
 } from "@shared/schema";
 import { z } from "zod";
+import Replicate from "replicate";
+
 
 // Configure multer for handling file uploads
 const upload = multer({ 
@@ -174,8 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setTimeout(async () => {
         await storage.updateModel(model.id, {
           status: 'completed',
-          replicateModelId: 'headshot-generator',
-          replicateVersionId: 'v1',
+          replicateModelId: 'trainings',
+          replicateVersionId: '94cc17a0d24ae3c2d12b67e7ed96b68e1af7f2276a903c4eefce78b0bcfc11eb',
           completedAt: new Date()
         });
       }, 10000); // 10 seconds to simulate training
@@ -244,25 +247,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Model is not ready for generation' });
       }
 
-      // In a real implementation, this would call the Replicate API to generate the headshot
-      // For now, we'll mock a successful response with a generated image URL
-
-      // Generate a random image URL based on style for demo purposes
-      const styles = ['corporate', 'casual', 'creative', 'business', 'outdoor', 'studio'];
-      const styleIndex = styles.indexOf(style) !== -1 ? styles.indexOf(style) : 0;
+      // Get the base style prompt
+      const stylePrompt = stylePrompts[style];
       
-      // Create a mock Unsplash image URL based on style
-      const imageUrls = [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2',
-        'https://images.unsplash.com/photo-1560250097-0b93528c311a',
-        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7',
-        'https://images.unsplash.com/photo-1541647376583-8934aaf3448a'
-      ];
+      // Combine style prompt with user prompt if provided
+      const finalPrompt = prompt 
+        ? `${stylePrompt} Additional details: ${prompt}` 
+        : stylePrompt;
       
-      const imageUrl = `${imageUrls[styleIndex]}?w=800&q=80`;
+      console.log('Final prompt:', finalPrompt);
 
+      const replicate = new Replicate({
+        auth: process.env.REPLICATE_API_TOKEN,
+      });
+{/*}
+      const modelIdentifier = `duchovs/${model.replicateModelId}:${model.replicateVersionId}` as const;
+      console.log('Using model:', modelIdentifier);
+      const output = await replicate.run(
+        modelIdentifier,
+        {
+          input: {
+            prompt: finalPrompt,
+            model: "dev",
+            go_fast: false,
+            lora_scale: 1,
+            megapixels: "1",
+            num_outputs: 1,
+            aspect_ratio: "1:1",
+            output_format: "png",
+            guidance_scale: 3,
+            output_quality: 80,
+            prompt_strength: 0.8,
+            extra_lora_scale: 1,
+            num_inference_steps: 28
+          }
+        }
+      );
+      */}
+
+      // imageUrl on replicate is temporary for an hour so we need to download the image
+      const imageUrl = String(output[0].url()).replace(/^"|"$/g, '');
+      console.log(imageUrl)
       // Store the generated headshot
       const headshot = await storage.createHeadshot({
         userId: req.user?.id || 1,
@@ -270,13 +295,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         style,
         imageUrl,
         replicatePredictionId: `prediction_${Date.now()}`,
-        prompt: prompt || "",
+        prompt: finalPrompt,
         metadata: {},
         favorite: false
       });
 
-      res.status(200).json(headshot);
-    } catch (error) {
+      // Ensure the public/img directory exists
+      const imgDir = path.join(__dirname, '../public/img');
+      if (!fs.existsSync(imgDir)) {
+        fs.mkdirSync(imgDir, { recursive: true });
+      }
+      // TODO: need to update the database with file location for headshot
+      // Use headshot ID or timestamp for unique filename
+      const imgFilename = `headshot_${headshot.id || Date.now()}.png`;
+      const imgPath = path.join(imgDir, imgFilename);
+      fs.writeFileSync(imgPath, output[0]);
+
+      res.status(200).json({ ...headshot, imgPath: `/img/${imgFilename}` });
+    }
+     catch (error) {
       console.error('Error generating headshot:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid generation data', errors: error.errors });
