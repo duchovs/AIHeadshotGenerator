@@ -27,6 +27,10 @@ import {
 import { z } from "zod";
 import Replicate from "replicate";
 
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
+
 // Configure multer for handling file uploads
 // Create data directories for secure file storage
 const dataDir = path.join(__dirname, '../data');
@@ -35,7 +39,7 @@ const generatedDir = path.join(dataDir, 'generated');
 fs.mkdirSync(uploadDir, { recursive: true });
 fs.mkdirSync(generatedDir, { recursive: true });
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.diskStorage({
     destination: (req, _file, cb) => {
       // Create user-specific directory
@@ -141,8 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const zip = new AdmZip();
       
       for (const photo of userPhotos) {
-        const photoPath = path.join(storage.toString(), photo.filename);
-        zip.addLocalFile(photoPath);
+        zip.addLocalFile(photo.path);
       }
 
       res.setHeader('Content-Type', 'application/zip');
@@ -156,7 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/uploads', isAuthenticated, upload.array('photos', 20), async (req: Request, res: Response) => {
+  app.post('/api/uploads', isAuthenticated, (req, res, next) => {
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    upload.array('photos', 20)(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({ error: err.message });
+      }
+      next();
+    });
+  }, async (req: Request, res: Response) => {
     try {
       if (!req.files || !Array.isArray(req.files)) {
         return res.status(400).json({ message: 'No files uploaded' });
@@ -304,14 +317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No valid photos provided' });
       }
 
-      const user = await storage.getUser(req.user?.id);
-      const model_name = user?.username?.toString() || 'default';
-      
+      const user = await storage.getUser(req.user?.id || 1);
+      const model_name = user?.username?.toString();
+      console.log('model name:' + model_name);
+
+      // TODO: check if model already exists*************
+      // get model if already created
+      const new_model = await replicate.models.get('duchovs', model_name || '');
       // create model on Replicate
-      const replicate = new Replicate({
-        auth: process.env.REPLICATE_API_TOKEN,
-      });
-      const new_model = await replicate.models.create('duchovs', model_name, { visibility: 'private' as 'private', hardware: 'gpu-a100-large' });
+      // const new_model = await replicate.models.create('duchovs', model_name, { visibility: 'private' as 'private', hardware: 'gpu-a100-large' });
       
       // Create model entry in the database
       const model = await storage.createModel({
@@ -437,9 +451,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Final prompt:', finalPrompt);
 
-      const replicate = new Replicate({
-        auth: process.env.REPLICATE_API_TOKEN,
-      });
       const modelIdentifier = `duchovs/${model.replicateModelId}:${model.replicateVersionId}` as const;
       console.log('Using model:', modelIdentifier);
       const output = await replicate.run(
