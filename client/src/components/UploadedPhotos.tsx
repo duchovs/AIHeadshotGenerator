@@ -113,20 +113,18 @@ const UploadedPhotos = ({ photos, onPhotoDeleted, onClearAll }: UploadedPhotosPr
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {photos.map(photo => (
           <div key={photo.id} className="relative group">
-            <div className="w-full h-32 bg-gray-200 rounded-md flex items-center justify-center overflow-hidden">
-              <svg 
-                className="h-12 w-12 text-gray-400" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
+            <div className="w-full h-32 bg-gray-200 rounded-md overflow-hidden">
+              <img
+                src={`/api/uploads/${photo.id}/preview`}
+                crossOrigin="anonymous"
+                alt={photo.filename}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder.png';
+                }}
+              />
             </div>
             <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 rounded-md flex items-center justify-center transition-opacity">
               <Button 

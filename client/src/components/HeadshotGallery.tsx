@@ -41,7 +41,9 @@ const HeadshotGallery = ({
     e.stopPropagation();
     
     try {
-      const response = await fetch(headshot.imageUrl);
+      const response = await fetch(`/api/headshots/${headshot.id}/image`);
+      if (!response.ok) throw new Error('Failed to download image');
+      
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       
@@ -189,9 +191,10 @@ const HeadshotGallery = ({
             <div className="relative">
               <div className="relative w-full h-48 bg-gray-200">
                 <img
-                  src={headshot.imageUrl}
+                  src={`/api/headshots/${headshot.id}/image`}
                   alt={`${headshot.style} style headshot`}
                   className="w-full h-full object-cover"
+                  crossOrigin="anonymous"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null; // Prevent infinite loop

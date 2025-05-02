@@ -37,7 +37,8 @@ passport.use(new GoogleStrategy({
       }
       
       // Create a new user
-      const username = `user_${profile.id.substring(0, 8)}`;
+      //
+      const username = profile.displayName || `user_${profile.id.substring(0, 8)}`;
       const email = profile.emails && profile.emails[0] ? profile.emails[0].value : '';
       
       const newUser = await storage.createUser({

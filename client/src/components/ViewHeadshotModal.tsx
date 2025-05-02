@@ -23,7 +23,9 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
 
   const handleDownloadFullSize = async () => {
     try {
-      const response = await fetch(headshot.imageUrl);
+      const response = await fetch(`/api/headshots/${headshot.id}/image`);
+      if (!response.ok) throw new Error('Failed to download image');
+      
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       
@@ -81,10 +83,10 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
         await navigator.share({
           title: `${headshot.style} Headshot by Headshot AI`,
           text: `Check out my professional headshot created with Headshot AI`,
-          url: headshot.imageUrl
+          url: `/api/headshots/${headshot.id}/image`
         });
       } else {
-        await navigator.clipboard.writeText(headshot.imageUrl);
+        await navigator.clipboard.writeText(`${window.location.origin}/api/headshots/${headshot.id}/image`);
         toast({
           title: "Link copied",
           description: "Headshot URL has been copied to your clipboard."
@@ -132,7 +134,8 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
             <div className="relative w-full max-w-md h-auto flex items-center justify-center">
               <div className="w-full h-72 md:h-96 bg-gray-200 relative">
                 <img
-                  src={headshot.imageUrl}
+                  src={`/api/headshots/${headshot.id}/image`}
+                  crossOrigin="anonymous"
                   alt={`${headshot.style} style headshot`}
                   className="w-full h-full object-contain"
                   onError={(e) => {

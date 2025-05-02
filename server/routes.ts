@@ -1,7 +1,16 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, type Request, type Response } from "express";
+import { db } from './db';
+import { eq } from 'drizzle-orm';
+import { uploadedPhotos } from '@shared/schema';
+import { fileURLToPath } from 'url';
+import AdmZip from 'adm-zip';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import path from "path";
+
+// ESM-compatible __dirname and __filename
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import fs from "fs";
 import { stylePrompts } from "../client/src/components/HeadshotStyles";
 import os from "os";
@@ -18,11 +27,31 @@ import {
 import { z } from "zod";
 import Replicate from "replicate";
 
-
 // Configure multer for handling file uploads
+// Create data directories for secure file storage
+const dataDir = path.join(__dirname, '../data');
+const uploadDir = path.join(dataDir, 'uploads');
+const generatedDir = path.join(dataDir, 'generated');
+fs.mkdirSync(uploadDir, { recursive: true });
+fs.mkdirSync(generatedDir, { recursive: true });
+
 const upload = multer({ 
-  dest: path.join(os.tmpdir(), 'headshot-ai-uploads'),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  storage: multer.diskStorage({
+    destination: (req, _file, cb) => {
+      // Create user-specific directory
+      const userId = req.user ? req.user.id.toString() : 'anonymous';
+      const userDir = path.join(uploadDir, userId);
+      fs.mkdirSync(userDir, { recursive: true });
+      cb(null, userDir);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+      cb(null, `${uniqueSuffix}-${file.originalname}`);
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
 });
 
 // Helper middleware to check if user is authenticated
@@ -32,6 +61,32 @@ const isAuthenticated = (req: Request, res: Response, next: any) => {
   }
   res.status(401).json({ message: 'Not authenticated' });
 };
+
+async function pollTrainingStatus(trainingId, modelId) {
+  let status = null;
+  let version = null;
+  while (true) {
+    const response = await replicate.trainings.get(trainingId);
+    status = response.status;
+    version = response.version;
+    if (status === 'succeeded') {
+      await storage.updateModel(modelId,  {
+        status: 'completed',
+        replicateVersionId: version,
+        completedAt: new Date()
+      });
+      break;
+    } else if (status === 'failed') {
+      await storage.updateModel(modelId, {
+        status: 'failed',
+        completedAt: new Date()
+      });
+      break;
+    }
+    // Wait for 30 seconds before polling again
+    await new Promise(resolve => setTimeout(resolve, 30000));
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -72,6 +127,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   // API routes for photo uploads
+  app.get('/api/photos/zip/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId;
+      const userPhotos = await db.query.uploadedPhotos.findMany({
+        where: eq(uploadedPhotos.userId, parseInt(userId))
+      });
+
+      if (!userPhotos.length) {
+        return res.status(404).json({ error: 'No photos found for user' });
+      }
+
+      const zip = new AdmZip();
+      
+      for (const photo of userPhotos) {
+        const photoPath = path.join(storage.toString(), photo.filename);
+        zip.addLocalFile(photoPath);
+      }
+
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename=photos.zip`);
+      
+      const zipBuffer = zip.toBuffer();
+      res.send(zipBuffer);
+    } catch (error) {
+      console.error('Error creating zip:', error);
+      res.status(500).json({ error: 'Failed to create zip file' });
+    }
+  });
+
   app.post('/api/uploads', isAuthenticated, upload.array('photos', 20), async (req: Request, res: Response) => {
     try {
       if (!req.files || !Array.isArray(req.files)) {
@@ -116,6 +200,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete an uploaded photo
+  // Secure file serving endpoints
+  const serveSecureFile = async (req: Request, res: Response, filePath: string, ownerId: number) => {
+    // Check if user owns the file
+    if (!req.user || req.user.id !== ownerId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    // Serve the file
+    res.sendFile(filePath);
+  };
+
+  // Serve uploaded photo previews
+  app.get('/api/uploads/:id/preview', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      if (isNaN(photoId)) {
+        return res.status(400).json({ message: 'Invalid photo ID' });
+      }
+
+      const photo = await storage.getUploadedPhoto(photoId);
+      if (!photo || !photo.path) {
+        return res.status(404).json({ message: 'Photo not found' });
+      }
+
+      await serveSecureFile(req, res, photo.path, photo.userId);
+    } catch (error) {
+      console.error('Error serving photo:', error);
+      res.status(500).json({ message: 'Failed to serve photo' });
+    }
+  });
+
+  // Serve generated headshots
+  app.get('/api/headshots/:id/image', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const headshotId = parseInt(req.params.id);
+      if (isNaN(headshotId)) {
+        return res.status(400).json({ message: 'Invalid headshot ID' });
+      }
+
+      const headshot = await storage.getHeadshot(headshotId);
+      if (!headshot) {
+        return res.status(404).json({ message: 'Headshot not found' });
+      }
+
+      const filePath = path.join(generatedDir, path.basename(headshot.imageUrl || ''));
+      await serveSecureFile(req, res, filePath, headshot.userId);
+    } catch (error) {
+      console.error('Error serving headshot:', error);
+      res.status(500).json({ message: 'Failed to serve headshot' });
+    }
+  });
+
   app.delete('/api/uploads/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -163,31 +304,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No valid photos provided' });
       }
 
+      const user = await storage.getUser(req.user?.id);
+      const model_name = user?.username?.toString() || 'default';
+      
+      // create model on Replicate
+      const replicate = new Replicate({
+        auth: process.env.REPLICATE_API_TOKEN,
+      });
+      const new_model = await replicate.models.create('duchovs', model_name, { visibility: 'private' as 'private', hardware: 'gpu-a100-large' });
+      
       // Create model entry in the database
       const model = await storage.createModel({
-        userId: req.user?.id || 1,
-        replicateModelId: 'training',
+        userId: req.user?.id,
+        replicateModelId: new_model.name,
         status: 'training'
       });
-
-      // In a real implementation, this would initiate the training process with Replicate API
-      // For now, we'll mock a successful response and set a timeout to update the model status
       
-      // Simulate a training job
-      setTimeout(async () => {
-        await storage.updateModel(model.id, {
-          status: 'completed',
-          replicateModelId: 'trainings',
-          replicateVersionId: '94cc17a0d24ae3c2d12b67e7ed96b68e1af7f2276a903c4eefce78b0bcfc11eb',
-          completedAt: new Date()
-        });
-      }, 10000); // 10 seconds to simulate training
+      // TODO: zip photos and serve to Replicate
+      // Initialize training process
+      
+      const training = await replicate.trainings.create(
+        "ostris",
+        "flux-dev-lora-trainer",
+        "c6e78d2501e8088876e99ef21e4460d0dc121af7a4b786b9a4c2d75c620e300d",
+        {
+          // create a model on Replicate that will be the destination for the trained version.
+          destination: 'duchovs/' + model_name,
+          input: {
+            steps: 2000,
+            lora_rank: 20,
+            optimizer: "adamw8bit",
+            batch_size: 1,
+            resolution: "512,768,1024",
+            autocaption: true,
+            input_images: `${req.protocol}://${req.get('host')}/api/photos/zip/${user?.id || ''}`,
+            trigger_word: "TOK",
+            learning_rate: 0.0004,
+            wandb_project: "flux_train_replicate",
+            wandb_save_interval: 100,
+            caption_dropout_rate: 0.05,
+            cache_latents_to_disk: false,
+            wandb_sample_interval: 100,
+            gradient_checkpointing: false
+          }
+        }
+      );
 
       res.status(200).json({
         id: model.id,
         status: 'training',
         message: 'Model training started'
       });
+
+      // poll model for completion status
+      await pollTrainingStatus(training.id, req.user?.id);
+
+      // store trained model
+      const response = await replicate.trainings.get(training.id);
+      if (response.status === 'succeeded') {
+        await storage.updateModel(model.id, {
+          status: 'completed',
+          replicateVersionId: training.version,
+          completedAt: new Date()
+        });
+      }
     } catch (error) {
       console.error('Error training model:', error);
       if (error instanceof z.ZodError) {
@@ -220,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all models for a user
   app.get('/api/models', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id || 1;
+      const userId = req.user?.id;
       const models = await storage.getModelsByUserId(userId);
       res.status(200).json(models);
     } catch (error) {
@@ -260,7 +440,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const replicate = new Replicate({
         auth: process.env.REPLICATE_API_TOKEN,
       });
-{/*}
       const modelIdentifier = `duchovs/${model.replicateModelId}:${model.replicateVersionId}` as const;
       console.log('Using model:', modelIdentifier);
       const output = await replicate.run(
@@ -283,14 +462,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       );
-      */}
 
       // imageUrl on replicate is temporary for an hour so we need to download the image
       const imageUrl = String(output[0].url()).replace(/^"|"$/g, '');
       console.log(imageUrl)
       // Store the generated headshot
       const headshot = await storage.createHeadshot({
-        userId: req.user?.id || 1,
+        userId: req.user?.id || 2,
         modelId,
         style,
         imageUrl,
@@ -300,18 +478,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         favorite: false
       });
 
-      // Ensure the public/img directory exists
-      const imgDir = path.join(__dirname, '../public/img');
-      if (!fs.existsSync(imgDir)) {
-        fs.mkdirSync(imgDir, { recursive: true });
-      }
-      // TODO: need to update the database with file location for headshot
-      // Use headshot ID or timestamp for unique filename
+      // Save the generated image in user's directory
+      const userDir = path.join(generatedDir, req.user ? req.user.id.toString() : 'anonymous');
+      fs.mkdirSync(userDir, { recursive: true });
       const imgFilename = `headshot_${headshot.id || Date.now()}.png`;
-      const imgPath = path.join(imgDir, imgFilename);
+      const imgPath = path.join(userDir, imgFilename);
       fs.writeFileSync(imgPath, output[0]);
 
-      res.status(200).json({ ...headshot, imgPath: `/img/${imgFilename}` });
+      // Update the headshot with the file path
+      const updatedHeadshot = await storage.updateHeadshot(headshot.id, {
+        imageUrl: imgPath
+      });
+
+      res.status(200).json(updatedHeadshot);
     }
      catch (error) {
       console.error('Error generating headshot:', error);
