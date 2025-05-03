@@ -11,6 +11,7 @@ import { queryClient } from '@/lib/queryClient';
 export interface HeadshotItem {
   id: number;
   style: string;
+  filePath: string;
   imageUrl: string;
   createdAt: string | Date;
   favorite: boolean;
@@ -100,10 +101,9 @@ const HeadshotGallery = ({
     const styles: Record<string, string[]> = {
       'corporate': ['Professional', 'Formal'],
       'casual': ['Casual', 'Natural'],
-      'creative': ['Creative', 'Artistic'],
-      'business': ['Business', 'Professional'],
+      'artistic': ['Creative', 'Portrait'],
       'outdoor': ['Outdoor', 'Natural'],
-      'studio': ['Studio', 'Professional']
+      'fantasy': ['Fantasy', 'Epic']
     };
     
     return styles[style.toLowerCase()] || ['Professional'];

@@ -6,13 +6,8 @@ interface StyleCardProps {
   isSelected?: boolean;
 }
 
-export const stylePrompts: Record<string, string> = {
-  Corporate: "Professional corporate headshot of TOK with a clean background and formal attire.",
-  Casual: "Relaxed and friendly headshot of TOK with casual clothing and a soft background.",
-  Artistic: "Creative headshot of TOK with artistic lighting and expressive pose.",
-  Outdoor: "Headshot of TOK taken outdoors with natural lighting and greenery.",
-  Fantasy: "Headshot of TOK with fantasy elements, imaginative background, and creative styling."
-};
+import { STYLE_PROMPTS, getStylePrompt } from '@shared/prompts';
+export { STYLE_PROMPTS, getStylePrompt };
 
 const StyleCard = ({ style, onClick, isSelected }: StyleCardProps) => {
   const styles: Record<string, string> = {

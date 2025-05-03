@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import StepIndicator from '@/components/StepIndicator';
-import HeadshotStyles from '@/components/HeadshotStyles';
+import HeadshotStyles, { stylePrompts } from '@/components/HeadshotStyles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
@@ -28,13 +28,20 @@ const generateFormSchema = z.object({
 
 type GenerateFormValues = z.infer<typeof generateFormSchema>;
 
+import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
+
 const Generate = () => {
   const { modelId } = useParams();
   const [, setLocation] = useLocation();
   const [selectedStyle, setSelectedStyle] = useState('Corporate');
+  const [selectedGender, setSelectedGender] = useState('male')
   const { toast } = useToast();
   
   const modelIdInt = modelId ? parseInt(modelId) : undefined;
+
+  // State for recent headshots
+  const [recentHeadshots, setRecentHeadshots] = useState<HeadshotItem[]>([]);
+  const [isRecentLoading, setIsRecentLoading] = useState<boolean>(true);
   
   const form = useForm<GenerateFormValues>({
     resolver: zodResolver(generateFormSchema),
@@ -78,6 +85,7 @@ const Generate = () => {
           modelId: modelIdInt,
           style: selectedStyle,
           prompt: values.prompt,
+          gender: selectedGender as 'male' | 'female',
         }),
       });
       
@@ -108,7 +116,25 @@ const Generate = () => {
       });
     }
   });
-
+  // Fetch recent headshots for this model/user
+  useEffect(() => {
+    let ignore = false;
+    const fetchRecent = async () => {
+      setIsRecentLoading(true);
+      try {
+        const res = await fetch(`/api/headshots?modelId=${modelIdInt}`);
+        if (!res.ok) throw new Error('Failed to fetch headshots');
+        const data = await res.json();
+        if (!ignore) setRecentHeadshots(data);
+      } catch (err) {
+        if (!ignore) setRecentHeadshots([]);
+      } finally {
+        if (!ignore) setIsRecentLoading(false);
+      }
+    };
+    if (modelIdInt) fetchRecent();
+    return () => { ignore = true; };
+  }, [modelIdInt, generateMutation.isPending]);
   const onSubmit = (values: GenerateFormValues) => {
     generateMutation.mutate(values);
   };
@@ -143,6 +169,25 @@ const Generate = () => {
               onSelectStyle={setSelectedStyle} 
               selectedStyle={selectedStyle}
             />
+            <div className="mb-8">
+              <h4 className="font-medium mb-4">Gender</h4>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={selectedGender === "male" ? "default" : "outline"}
+                  className="w-24"
+                  onClick={() => setSelectedGender("male")}
+                >
+                  Male
+                </Button>
+                <Button
+                  variant={selectedGender === "female" ? "default" : "outline"}
+                  className="w-24"
+                  onClick={() => setSelectedGender("female")}
+                >
+                  Female
+                </Button>
+              </div>
+            </div>
           </div>
           
           <Form {...form}>
@@ -194,6 +239,13 @@ const Generate = () => {
               <h4 className="text-lg font-medium mb-2">Generating your headshot...</h4>
               <p className="text-gray-500">This may take a few moments.</p>
             </div>
+          ) : isRecentLoading ? (
+            <div className="flex flex-col items-center justify-center">
+              <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+              <h4 className="text-lg font-medium mb-2">Loading your headshots...</h4>
+            </div>
+          ) : recentHeadshots.length > 0 ? (
+            <HeadshotGallery headshots={recentHeadshots} title="Your Recent Generations" showViewAll={false} />
           ) : (
             <>
               <svg 

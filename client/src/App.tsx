@@ -11,6 +11,9 @@ import Upload from "@/pages/Upload";
 import Train from "@/pages/Train";
 import Generate from "@/pages/Generate";
 import Gallery from "@/pages/Gallery";
+import TokensPage from "@/pages/Tokens";
+import PaymentSuccess from "@/pages/PaymentSuccess";
+import PaymentCancel from "@/pages/PaymentCancel";
 
 function Router() {
   return (
@@ -20,6 +23,9 @@ function Router() {
       <Route path="/train/:modelId?" component={Train} />
       <Route path="/generate/:modelId?" component={Generate} />
       <Route path="/gallery" component={Gallery} />
+      <Route path="/tokens" component={TokensPage} />
+      <Route path="/payment/success" component={PaymentSuccess} />
+      <Route path="/payment/cancel" component={PaymentCancel} />
       <Route component={NotFound} />
     </Switch>
   );

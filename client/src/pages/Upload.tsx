@@ -18,6 +18,18 @@ const Upload = () => {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isTrainingModalOpen, setIsTrainingModalOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const [error, setError] = useState<string | null>(null);
+
+  // Get error from URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const errorMsg = params.get('error');
+    if (errorMsg) {
+      setError(decodeURIComponent(errorMsg));
+      // Clear the error from URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ['/api/uploads'],
@@ -56,6 +68,13 @@ const Upload = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <StepIndicator currentStep="upload" />
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <h4 className="font-medium text-red-800 mb-2">Training Failed</h4>
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
       
       <Card className="mb-10">
         <CardContent className="pt-6">

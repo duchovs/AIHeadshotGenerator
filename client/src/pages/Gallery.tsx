@@ -46,7 +46,7 @@ const Gallery = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Failed to load headshots. Please try refreshing the page.
+            Failed to load headshots. Are you logged in?
           </AlertDescription>
         </Alert>
       ) : (

@@ -1,4 +1,5 @@
 import express, { type Express, type Request, type Response } from "express";
+import stripeRoutes from './routes/stripe';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { uploadedPhotos } from '@shared/schema';
@@ -6,13 +7,16 @@ import { fileURLToPath } from 'url';
 import AdmZip from 'adm-zip';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { deductTokens, checkTokenBalance } from "./middleware/tokenMiddleware";
+import type { TokenRequest } from "./middleware/tokenMiddleware";
 import path from "path";
+import { getStylePrompt } from './prompts';
+import Replicate from "replicate";
 
 // ESM-compatible __dirname and __filename
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import fs from "fs";
-import { stylePrompts } from "../client/src/components/HeadshotStyles";
 import os from "os";
 import multer from "multer";
 import axios from "axios";
@@ -25,7 +29,6 @@ import {
   generateHeadshotSchema
 } from "@shared/schema";
 import { z } from "zod";
-import Replicate from "replicate";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -66,26 +69,29 @@ const isAuthenticated = (req: Request, res: Response, next: any) => {
   res.status(401).json({ message: 'Not authenticated' });
 };
 
-async function pollTrainingStatus(trainingId, modelId) {
+async function pollTrainingStatus(trainingId: string, modelId: number): Promise<any> {
   let status = null;
   let version = null;
   while (true) {
     const response = await replicate.trainings.get(trainingId);
     status = response.status;
     version = response.version;
+    console.log('training status:', status);
+    console.log('logs:', response.logs)
     if (status === 'succeeded') {
       await storage.updateModel(modelId,  {
         status: 'completed',
         replicateVersionId: version,
         completedAt: new Date()
       });
-      break;
+      return response;
     } else if (status === 'failed') {
       await storage.updateModel(modelId, {
         status: 'failed',
-        completedAt: new Date()
+        completedAt: new Date(),
+        error: response.error ? String(response.error) : 'Unknown error occurred during training'
       });
-      break;
+      return response;
     }
     // Wait for 30 seconds before polling again
     await new Promise(resolve => setTimeout(resolve, 30000));
@@ -93,6 +99,8 @@ async function pollTrainingStatus(trainingId, modelId) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Stripe routes
+  app.use('/api/stripe', stripeRoutes);
   // Auth routes
   app.get('/auth/google',
     passport.authenticate('google', { scope: ['profile', 'email'] })
@@ -262,8 +270,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Headshot not found' });
       }
 
-      const filePath = path.join(generatedDir, path.basename(headshot.imageUrl || ''));
-      await serveSecureFile(req, res, filePath, headshot.userId);
+      const file_path = headshot.filePath;
+
+      await serveSecureFile(req, res, file_path, headshot.userId);
     } catch (error) {
       console.error('Error serving headshot:', error);
       res.status(500).json({ message: 'Failed to serve headshot' });
@@ -298,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Train a model using Replicate API
-  app.post('/api/models/train', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/models/train', isAuthenticated, checkTokenBalance(6), async (req: TokenRequest, res: Response) => {
     try {
       const { photoIds } = trainModelSchema.parse(req.body);
       
@@ -318,32 +327,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUser(req.user?.id || 1);
-      const model_name = user?.username?.toString();
-      console.log('model name:' + model_name);
+      let new_model;
 
-      // TODO: check if model already exists*************
-      // get model if already created
-      const new_model = await replicate.models.get('duchovs', model_name || '');
-      // create model on Replicate
-      // const new_model = await replicate.models.create('duchovs', model_name, { visibility: 'private' as 'private', hardware: 'gpu-a100-large' });
-      
+      try {
+        // get model if already created
+        new_model = await replicate.models.get('duchovs', user?.username?.toString() || '');
+        console.log('model exists:', new_model.name);
+      } catch (error: any) {
+        if (error.status === 404) {
+          // model does not exist, so create it
+          console.log('model not found... creating new model');
+          new_model = await replicate.models.create('duchovs', user?.username?.toString() || '', { visibility: 'private' as 'private', hardware: 'gpu-a100-large' });
+        }
+      }
+
       // Create model entry in the database
       const model = await storage.createModel({
-        userId: req.user?.id,
-        replicateModelId: new_model.name,
-        status: 'training'
+      userId: req.user?.id || 1,
+      replicateModelId: new_model?.name || '',
+      status: 'training'
       });
       
-      // TODO: zip photos and serve to Replicate
+      if (!req.user?.id) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Deduct 6 tokens for model training
+      await deductTokens(
+        req.user.id,
+        6,
+        'train_model',
+        model.id,
+        { action: 'train' }
+      );
+
       // Initialize training process
-      
       const training = await replicate.trainings.create(
         "ostris",
         "flux-dev-lora-trainer",
         "c6e78d2501e8088876e99ef21e4460d0dc121af7a4b786b9a4c2d75c620e300d",
         {
           // create a model on Replicate that will be the destination for the trained version.
-          destination: 'duchovs/' + model_name,
+          destination: 'duchovs/' + model.replicateModelId,
           input: {
             steps: 2000,
             lora_rank: 20,
@@ -363,25 +388,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       );
-
-      res.status(200).json({
-        id: model.id,
-        status: 'training',
-        message: 'Model training started'
-      });
-
-      // poll model for completion status
-      await pollTrainingStatus(training.id, req.user?.id);
-
-      // store trained model
-      const response = await replicate.trainings.get(training.id);
-      if (response.status === 'succeeded') {
-        await storage.updateModel(model.id, {
-          status: 'completed',
-          replicateVersionId: training.version,
-          completedAt: new Date()
+      
+      // send immediate response and start background polling
+      res.status(200).json({ id: model.id, status: 'training', message: 'Model training started' });
+      void pollTrainingStatus(training.id, model.id).then(response => {
+        if (response.status === 'failed') {
+          console.error('Training failed:', response.error);
+          // Update the model with the failure status and error
+          void storage.updateModel(model.id, {
+            status: 'failed',
+            completedAt: new Date(),
+            error: String(response.error) || 'Unknown error occurred during training'
+          });
+        }
+      }).catch(err => {
+        console.error('Polling error:', err);
+        // Update model with error on polling failure
+        void storage.updateModel(model.id, {
+          status: 'failed',
+          completedAt: new Date(),
+          error: 'Failed to check training status: ' + String(err)
         });
-      }
+      });
     } catch (error) {
       console.error('Error training model:', error);
       if (error instanceof z.ZodError) {
@@ -394,6 +422,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get model training status
   app.get('/api/models/:id', async (req: Request, res: Response) => {
     try {
+      // Prevent caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid model ID' });
@@ -403,8 +436,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!model) {
         return res.status(404).json({ message: 'Model not found' });
       }
+      
+      // Always include status and message
+      const response = {
+        ...model,
+        message: model.status === 'failed' ? (model.error || 'Training failed') : 
+                model.status === 'training' ? 'Model is training...' : 
+                model.status === 'completed' ? 'Training completed successfully' : undefined
+      };
 
-      res.status(200).json(model);
+      res.status(200).json(response);
     } catch (error) {
       console.error('Error fetching model:', error);
       res.status(500).json({ message: 'Failed to fetch model information' });
@@ -424,9 +465,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate a headshot using a trained model
-  app.post('/api/headshots/generate', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/headshots/generate', isAuthenticated, checkTokenBalance(1), async (req: TokenRequest, res: Response) => {
     try {
-      const { modelId, style, prompt } = generateHeadshotSchema.parse(req.body);
+      const { modelId, style, prompt, gender } = generateHeadshotSchema.parse(req.body);
       
       if (!process.env.REPLICATE_API_TOKEN) {
         return res.status(500).json({ message: 'Replicate API token not configured' });
@@ -442,22 +483,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get the base style prompt
-      const stylePrompt = stylePrompts[style];
+      const stylePrompt = getStylePrompt(style, gender, prompt);
       
-      // Combine style prompt with user prompt if provided
-      const finalPrompt = prompt 
-        ? `${stylePrompt} Additional details: ${prompt}` 
-        : stylePrompt;
-      
-      console.log('Final prompt:', finalPrompt);
+      console.log('Final prompt:', stylePrompt);
 
       const modelIdentifier = `duchovs/${model.replicateModelId}:${model.replicateVersionId}` as const;
       console.log('Using model:', modelIdentifier);
+      if (!req.user?.id) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Deduct 1 token for headshot generation
+      await deductTokens(
+        req.user.id,
+        1,
+        'generate_headshot',
+        undefined,
+        { style, prompt }
+      );
+
       const output = await replicate.run(
         modelIdentifier,
         {
           input: {
-            prompt: finalPrompt,
+            prompt: stylePrompt,
             model: "dev",
             go_fast: false,
             lora_scale: 1,
@@ -484,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         style,
         imageUrl,
         replicatePredictionId: `prediction_${Date.now()}`,
-        prompt: finalPrompt,
+        prompt: stylePrompt,
         metadata: {},
         favorite: false
       });
@@ -494,11 +543,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       fs.mkdirSync(userDir, { recursive: true });
       const imgFilename = `headshot_${headshot.id || Date.now()}.png`;
       const imgPath = path.join(userDir, imgFilename);
-      fs.writeFileSync(imgPath, output[0]);
+      
+      // Download the image data
+      const response = await fetch(imageUrl);
+      const imageBuffer = await response.arrayBuffer();
+      fs.writeFileSync(imgPath, Buffer.from(imageBuffer));
 
       // Update the headshot with the file path
       const updatedHeadshot = await storage.updateHeadshot(headshot.id, {
-        imageUrl: imgPath
+        imageUrl: imageUrl,
+        filePath: imgPath
       });
 
       res.status(200).json(updatedHeadshot);

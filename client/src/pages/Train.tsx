@@ -15,19 +15,28 @@ const Train = () => {
   
   const modelIdInt = modelId ? parseInt(modelId) : undefined;
   
+  interface ModelData {
+    id: number;
+    userId: number;
+    replicateModelId: string;
+    status: 'training' | 'completed' | 'failed';
+    message?: string;
+    error?: string;
+  }
+
   const { data: model, isLoading } = useQuery({
     queryKey: ['/api/models', modelIdInt],
-    queryFn: async () => {
+    queryFn: async (): Promise<ModelData | null> => {
       if (!modelIdInt) return null;
       const response = await fetch(`/api/models/${modelIdInt}`);
       if (!response.ok) throw new Error('Failed to fetch model');
       return response.json();
     },
     enabled: !!modelIdInt,
-    refetchInterval: (data) => {
-      // Refetch until training is complete
-      return data?.status === 'completed' ? false : 5000;
-    }
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    select: (data: ModelData | null) => data,
+    staleTime: 0
   });
 
   useEffect(() => {
@@ -40,12 +49,15 @@ const Train = () => {
     if (model?.status === 'completed') {
       // Navigate to generate when training is complete
       setLocation(`/generate/${modelIdInt}`);
+    } else if (model?.status === 'failed') {
+      // Navigate back to upload with error when training fails
+      setLocation('/upload?error=' + encodeURIComponent(model.message || 'Training failed'));
     }
   }, [modelIdInt, model, setLocation]);
 
   // Simulate training progress
   useEffect(() => {
-    if (!modelIdInt || model?.status === 'completed') return;
+    if (!modelIdInt || model?.status === 'completed' || model?.status === 'failed') return;
     
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -97,20 +109,36 @@ const Train = () => {
             </div>
           </div>
           
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 max-w-md mx-auto mb-8">
-            <h4 className="font-medium text-yellow-800 mb-2">Training in Progress</h4>
-            <p className="text-sm text-yellow-700">
-              Please keep this page open while training completes. You'll be automatically redirected when it's done.
-            </p>
-          </div>
+          {model?.status === 'failed' ? (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 max-w-md mx-auto mb-8">
+              <h4 className="font-medium text-red-800 mb-2">Training Failed</h4>
+              <p className="text-sm text-red-700">
+                {model.message || 'An error occurred during training. Please try again.'}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 max-w-md mx-auto mb-8">
+              <h4 className="font-medium text-yellow-800 mb-2">Training in Progress</h4>
+              <p className="text-sm text-yellow-700">
+                Please keep this page open while training completes. You'll be automatically redirected when it's done.
+              </p>
+            </div>
+          )}
           
           <div className="text-center">
             <Button 
-              disabled={true}
+              disabled={model?.status !== 'failed'}
               className="min-w-[200px]"
+              onClick={() => setLocation('/upload')}
             >
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Training in Progress
+              {model?.status === 'failed' ? (
+                'Try Again'
+              ) : (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Training in Progress
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

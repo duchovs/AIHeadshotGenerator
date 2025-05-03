@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   displayName: text("display_name"),
   profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Token balance for in-app purchases
+  tokens: integer("tokens").default(0).notNull(),
 });
 
 export const uploadedPhotos = pgTable("uploaded_photos", {
@@ -28,6 +30,7 @@ export const models = pgTable("models", {
   replicateModelId: text("replicate_model_id").notNull(),
   replicateVersionId: text("replicate_version_id"),
   status: text("status").notNull(), // "training", "completed", "failed"
+  error: text("error"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 });
@@ -37,12 +40,41 @@ export const headshots = pgTable("headshots", {
   userId: integer("user_id").references(() => users.id),
   modelId: integer("model_id").references(() => models.id),
   style: text("style").notNull(),
+  filePath: text("file_path"),
   imageUrl: text("image_url").notNull(),
   replicatePredictionId: text("replicate_prediction_id").notNull(),
   prompt: text("prompt"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   favorite: boolean("favorite").default(false),
+});
+
+// Table to track Stripe payment transactions
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  stripePaymentId: text("stripe_payment_id").notNull().unique(),
+  amount: integer("amount").notNull(), // amount in smallest currency unit (e.g., cents)
+  currency: text("currency").notNull(),
+  status: text("status").notNull(), // e.g. 'pending', 'succeeded', 'failed'
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const tokenTransactions = pgTable("token_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(),             // e.g. 'generate_headshot', 'train_model', 'purchase'
+  referenceId: integer("reference_id"),             // headshot.id or model.id
+  tokens: integer("tokens_delta").notNull(),   // negative for consumption, positive for top-ups
+  metadata: jsonb("metadata"),                   // optional freeform (e.g. style, prompt)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const session = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire", { mode: "date" }).notNull(),
 });
 
 // Insert schemas
@@ -72,6 +104,8 @@ export const insertHeadshotSchema = createInsertSchema(headshots).omit({
 });
 
 // Types
+export type Session = typeof session.$inferSelect;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -84,6 +118,8 @@ export type Model = typeof models.$inferSelect;
 export type InsertHeadshot = z.infer<typeof insertHeadshotSchema>;
 export type Headshot = typeof headshots.$inferSelect;
 
+export type Payment = typeof payments.$inferSelect;
+
 // Custom schemas for API requests
 export const trainModelSchema = z.object({
   userId: z.number().optional(),
@@ -94,4 +130,5 @@ export const generateHeadshotSchema = z.object({
   modelId: z.number(),
   style: z.string(),
   prompt: z.string().optional(),
+  gender: z.enum(['male','female']),
 });

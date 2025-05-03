@@ -7,9 +7,26 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import LoginButton from "./LoginButton";
+import { useQuery } from '@tanstack/react-query';
+import TokenBalance from './TokenBalance';
 
 const Header = () => {
   const [location] = useLocation();
+
+  const { data: models } = useQuery({
+    queryKey: ['/api/models'],
+    queryFn: async () => {
+      const res = await fetch('/api/models');
+      if (!res.ok) throw new Error('Failed to fetch models');
+      return res.json();
+    }
+  });
+
+  const completedModel = models
+    ? models
+        .filter((m: any) => m.status === 'completed')
+        .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0]
+    : null;
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -41,11 +58,21 @@ const Header = () => {
             <Link href="/gallery">
               <span className={`font-medium cursor-pointer ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</span>
             </Link>
-            <a href="/generate/1" className="font-medium text-gray-500 hover:text-gray-900">Generate</a>
-            <a href="#" className="font-medium text-gray-500 hover:text-gray-900">Help</a>
+            <Link href="/train">
+              <span className={`font-medium cursor-pointer ${location === "/train" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Train</span>
+            </Link>
+            <Link href={`/generate/${completedModel?.id}`}>
+              <span className={`font-medium cursor-pointer ${location === `/generate/${completedModel?.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Generate</span>
+            </Link>
           </nav>
 
           <div className="flex items-center space-x-4">
+            <Link href="/tokens">
+              <div className="flex items-center space-x-1 hover:text-primary cursor-pointer">
+                <TokenBalance />
+                <span className="text-sm text-gray-500">Buy Tokens</span>
+              </div>
+            </Link>
             <LoginButton />
             
             <div className="hidden sm:block">
@@ -69,11 +96,15 @@ const Header = () => {
                   <Link href="/gallery">
                     <span className="font-medium text-gray-600 py-2 cursor-pointer">Gallery</span>
                   </Link>
-                  <Link href="/upload">
-                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Get Started</span>
+                  <Link href="/train">
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Train</span>
                   </Link>
-                  <a href="#" className="font-medium text-gray-600 py-2">About</a>
-                  <a href="#" className="font-medium text-gray-600 py-2">Help</a>
+                  <Link href={`/generate/${completedModel?.id}`}>
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Generate</span>
+                  </Link>
+                  <Link href="/tokens">
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Buy Tokens</span>
+                  </Link>
                 </nav>
               </SheetContent>
             </Sheet>
