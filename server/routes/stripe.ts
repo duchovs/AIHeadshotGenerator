@@ -26,11 +26,19 @@ const isAuthenticated = (req: any, res: any, next: any) => {
 
 // Get available token packages
 router.get('/packages', (_req, res) => {
-  res.json(Object.values(STRIPE_PRICE_CONFIGS));
+  console.log('Sending packages:', STRIPE_PRICE_CONFIGS);
+  const packages = Object.entries(STRIPE_PRICE_CONFIGS).map(([id, config]) => ({
+    id,
+    ...config,
+    price: `$${config.amount / 100}`,
+  }));
+  console.log('Formatted packages:', packages);
+  res.json(packages);
 });
 
 // Create a Stripe Checkout Session
 router.post('/create-checkout-session', isAuthenticated, async (req: TokenRequest, res) => {
+  console.log('Creating checkout session with price ID:', req.body.priceId);
   try {
     const { priceId } = req.body;
     
@@ -38,7 +46,9 @@ router.post('/create-checkout-session', isAuthenticated, async (req: TokenReques
       return res.status(400).json({ error: 'Price ID is required' });
     }
 
+    console.log('Available price configs:', STRIPE_PRICE_CONFIGS);
     const tokens = getTokensForPriceId(priceId);
+    console.log('Tokens for price ID:', tokens);
     if (!tokens) {
       return res.status(400).json({ error: 'Invalid price ID' });
     }

@@ -1,22 +1,14 @@
 import Stripe from 'stripe';
-import { z } from 'zod';
-
-// Load environment variables first
-import * as dotenv from 'dotenv';
-dotenv.config();
-
-const envSchema = z.object({
-  STRIPE_SECRET_KEY: z.string(),
-  STRIPE_PRICE_10_TOKENS: z.string(),
-  STRIPE_PRICE_30_TOKENS: z.string(),
-  STRIPE_PRICE_70_TOKENS: z.string(),
-});
-
-const env = envSchema.parse(process.env);
+import { env } from './env';
 
 // Initialize Stripe with your secret key
 export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-04-30.basil',
+  typescript: true,
+  appInfo: {
+    name: 'AI Headshot Generator',
+    version: '1.0.0',
+  },
 });
 
 // Token package configurations

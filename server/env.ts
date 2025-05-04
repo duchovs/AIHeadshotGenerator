@@ -1,10 +1,17 @@
 import { z } from 'zod';
+import * as dotenv from 'dotenv';
+
+// Load .env file first
+dotenv.config();
 
 const envSchema = z.object({
+  // Database
+  DATABASE_URL: z.string(),
+  
   // Existing env vars
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3000'),
-  CLIENT_URL: z.string().default('http://localhost:5173'),
+  CLIENT_URL: z.string().default('https://headshot.aismartsolution.ai'),
   
   // Stripe-related env vars
   STRIPE_SECRET_KEY: z.string(),

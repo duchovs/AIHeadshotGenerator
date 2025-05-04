@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import StepIndicator from '@/components/StepIndicator';
-import HeadshotStyles, { stylePrompts } from '@/components/HeadshotStyles';
+import HeadshotStyles from '@/components/HeadshotStyles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
