@@ -30,6 +30,7 @@ export const models = pgTable("models", {
   replicateModelId: text("replicate_model_id").notNull(),
   replicateVersionId: text("replicate_version_id"),
   status: text("status").notNull(), // "training", "completed", "failed", "canceled"
+  progress: integer("progress"),
   error: text("error"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),

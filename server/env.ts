@@ -22,6 +22,9 @@ const envSchema = z.object({
   STRIPE_PRICE_10_TOKENS: z.string(),
   STRIPE_PRICE_30_TOKENS: z.string(),
   STRIPE_PRICE_70_TOKENS: z.string(),
+
+  // Resend
+  RESEND_API_KEY: z.string(),
 });
 
 export const env = envSchema.parse(process.env);

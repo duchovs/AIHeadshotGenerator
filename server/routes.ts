@@ -1,7 +1,7 @@
 import express, { type Express, type Request, type Response } from 'express';
-import { Server } from 'http';
 import stripeRoutes from './routes/stripe';
 import { db } from './db';
+import { sendModelCompletionEmail } from './resend';
 import { eq } from 'drizzle-orm';
 import { uploadedPhotos } from '@shared/schema';
 import { fileURLToPath } from 'url';
@@ -18,9 +18,7 @@ import Replicate from "replicate";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import fs from "fs";
-import os from "os";
 import multer from "multer";
-import axios from "axios";
 import passport from "./auth";
 import {
   insertUploadedPhotoSchema,
@@ -165,15 +163,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             replicateVersionId: training.version,
             completedAt: new Date()
           });
+          
+          // Get user email and send completion notification
+          const completedUser = await storage.getUser(model.userId || 0);
+          if (completedUser?.email) {
+            await sendModelCompletionEmail(completedUser.email, modelId);
+          }
           break;
 
         case 'failed':
         case 'canceled':
           // Refund the tokens
-          const user = await storage.getUser(model.userId);
-          if (user) {
-            await storage.updateUser(user.id, {
-              tokens: (user.tokens || 0) + 6 // Refund training cost
+          const failedUser = await storage.getUser(model.userId || 0);
+          if (failedUser) {
+            await storage.updateUser(failedUser.id, {
+              tokens: (failedUser.tokens || 0) + 6 // Refund training cost
             });
           }
           
