@@ -1,4 +1,5 @@
-import express, { type Express, type Request, type Response } from "express";
+import express, { type Express, type Request, type Response } from 'express';
+import { Server } from 'http';
 import stripeRoutes from './routes/stripe';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
@@ -69,36 +70,130 @@ const isAuthenticated = (req: Request, res: Response, next: any) => {
   res.status(401).json({ message: 'Not authenticated' });
 };
 
+// Backup polling mechanism in case webhook fails
 async function pollTrainingStatus(trainingId: string, modelId: number): Promise<any> {
   let status = null;
   let version = null;
-  while (true) {
+  let retryCount = 0;
+  const maxRetries = 120; // 1 hour maximum polling (30s * 120)
+
+  while (retryCount < maxRetries) {
     const response = await replicate.trainings.get(trainingId);
     status = response.status;
     version = response.version;
-    console.log('training status:', status);
-    console.log('logs:', response.logs)
-    if (status === 'succeeded') {
-      await storage.updateModel(modelId,  {
-        status: 'completed',
-        replicateVersionId: version,
-        completedAt: new Date()
-      });
-      return response;
-    } else if (status === 'failed') {
-      await storage.updateModel(modelId, {
-        status: 'failed',
-        completedAt: new Date(),
-        error: response.error ? String(response.error) : 'Unknown error occurred during training'
-      });
+    //console.log('response body:',response);
+    //console.log('response logs:',response.logs);
+    //console.log('polling status:', status);
+
+    // Check if model is already updated (webhook might have succeeded)
+    const model = await storage.getModel(modelId);
+    if (model.status === 'completed' || model.status === 'failed' || model.status === 'canceled') {
+      console.log('Model already updated by webhook');
       return response;
     }
+
+    if (status === 'succeeded' || status === 'failed' || status === 'canceled') {
+      // Return response immediately for any terminal state
+      // Token refunds and model updates are handled by webhook
+      return response;
+    }
+
+    retryCount++;
     // Wait for 30 seconds before polling again
     await new Promise(resolve => setTimeout(resolve, 30000));
   }
+
+  // If we reach here, polling timed out
+  console.error('Polling timed out after 1 hour');
+  await storage.updateModel(modelId, {
+    status: 'failed',
+    completedAt: new Date(),
+    error: 'Training status polling timed out after 1 hour'
+  });
+  return { status: 'failed', error: 'Polling timeout' };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure body parser to accept larger payloads
+  app.use(express.json({limit: '50mb'}));
+  app.use(express.urlencoded({limit: '50mb', extended: true}));
+  // Webhook endpoint for Replicate training completion
+  app.post('/api/webhooks/training-complete', async (req, res) => {
+    const training = req.body;
+    console.log('-------------------------')
+    console.log('Received training webhook...');
+    console.log('id:', training.id);
+    console.log('error:', training.error);
+    console.log('status:', training.status);
+    
+    // Extract percentage from logs
+    let progress = 0;
+    if (training.logs) {
+      const logLines = training.logs.split('\n');
+      for (const line of logLines) {
+        if (line.includes('flux_train_replicate')) {
+          const match = line.match(/(\d+)%/);
+          if (match) {
+            progress = parseInt(match[1], 10);
+            console.log('Training progress:', progress + '%');
+            break;
+          }
+        }
+      }
+    }
+    console.log('-------------------------')
+
+    try {
+      // Extract model ID from the training metadata or custom field
+      const parsed = new URL(training.webhook);
+      const modelIdParam = parsed.searchParams.get('modelId');
+      if (!modelIdParam) {
+        throw new Error('Missing modelId in webhook URL');
+      }
+      const modelId = parseInt(modelIdParam, 10);
+
+      // Get the model to find the user for refund
+      const model = await storage.getModel(modelId);
+      if (!model) {
+        throw new Error('Model not found');
+      }
+
+      switch (training.status) {
+        case 'completed':
+          await storage.updateModel(modelId, {
+            status: 'completed',
+            replicateVersionId: training.version,
+            completedAt: new Date()
+          });
+          break;
+
+        case 'failed':
+        case 'canceled':
+          // Refund the tokens
+          const user = await storage.getUser(model.userId);
+          if (user) {
+            await storage.updateUser(user.id, {
+              tokens: (user.tokens || 0) + 6 // Refund training cost
+            });
+          }
+          
+          await storage.updateModel(modelId, {
+            status: training.status,
+            completedAt: new Date(),
+            error: training.status === 'canceled' 
+              ? 'Training was canceled - tokens refunded'
+              : `Training failed: ${training.error ? String(training.error) : 'Unknown error'} - tokens refunded`
+          });
+          break;
+      }
+
+      res.status(200).json({ message: 'Webhook processed successfully' });
+    } catch (error) {
+      console.error('Error processing training webhook:', error);
+      res.status(500).json({ error: 'Error processing webhook' });
+    }
+  });
+
   // Stripe routes
   app.use('/api/stripe', stripeRoutes);
   // Auth routes
@@ -168,11 +263,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/uploads', isAuthenticated, (req, res, next) => {
-    console.log('Request headers:', req.headers);
-    console.log('Request body:', req.body);
+    //console.log('Request headers:', req.headers);
+    //console.log('Request body:', req.body);
     upload.array('photos', 20)(req, res, (err) => {
       if (err) {
-        console.error('Multer error:', err);
+        console.error('Multer error: Too many photos', err);
         return res.status(400).json({ error: err.message });
       }
       next();
@@ -329,15 +424,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(req.user?.id || 1);
       let new_model;
 
+      // get model if already created
+      const username = user?.username?.toString() || '';
+      console.log('checking for model created for:', username);
+      
       try {
-        // get model if already created
-        new_model = await replicate.models.get('duchovs', user?.username?.toString() || '');
+        new_model = await replicate.models.get('duchovs', username);
         console.log('model exists:', new_model.name);
-      } catch (error: any) {
-        if (error.status === 404) {
+      } catch (getError: any) {
+        console.log('get model error details:', {
+          error: getError,
+          status: getError.status,
+          response: getError.response,
+          responseStatus: getError.response?.status,
+          message: getError.message
+        });
+        
+        // Check both error.status and error.response.status for 404
+        if (getError.status === 404 || getError.response?.status === 404) {
           // model does not exist, so create it
-          console.log('model not found... creating new model');
-          new_model = await replicate.models.create('duchovs', user?.username?.toString() || '', { visibility: 'private' as 'private', hardware: 'gpu-a100-large' });
+          console.log('model not found... creating new model for:', username);
+          new_model = await replicate.models.create('duchovs', username, {
+            visibility: 'private' as 'private',
+            hardware: 'gpu-a100-large'
+          });
+          console.log('new model created:', new_model.name);
+        } else {
+          throw new Error(`Failed to get/create model: ${getError.message}`);
         }
       }
 
@@ -369,6 +482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           // create a model on Replicate that will be the destination for the trained version.
           destination: 'duchovs/' + model.replicateModelId,
+          webhook: `https://${req.get('host')}/api/webhooks/training-complete?modelId=${model.id}`,
+          webhook_events_filter: ["completed", "logs"], // 'completed' webhook also contains: 'failed', 'canceled'
           input: {
             steps: 2000,
             lora_rank: 20,
@@ -385,11 +500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cache_latents_to_disk: false,
             wandb_sample_interval: 100,
             gradient_checkpointing: false
-          }
+          },
         }
       );
       
-      // send immediate response and start background polling
+      // send immediate response and start background polling as backup
       res.status(200).json({ id: model.id, status: 'training', message: 'Model training started' });
       void pollTrainingStatus(training.id, model.id).then(response => {
         if (response.status === 'failed') {
@@ -499,7 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         1,
         'generate_headshot',
         undefined,
-        { style, prompt }
+        { style, gender, prompt }
       );
 
       const output = await replicate.run(
@@ -559,10 +674,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
      catch (error) {
       console.error('Error generating headshot:', error);
+
+      // Refund 1 token on failure
+      const userId = req.user?.id;
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          await storage.updateUser(user.id, {
+            tokens: (user.tokens || 0) + 1 // Refund 1 token for failed generation
+          });
+        }
+      }
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid generation data', errors: error.errors });
       }
-      res.status(500).json({ message: 'Failed to generate headshot' });
+      res.status(500).json({ message: 'Failed to generate headshot - token refunded' });
     }
   });
 

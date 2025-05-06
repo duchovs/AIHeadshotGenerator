@@ -19,7 +19,7 @@ const Train = () => {
     id: number;
     userId: number;
     replicateModelId: string;
-    status: 'training' | 'completed' | 'failed';
+    status: 'training' | 'completed' | 'failed' | 'canceled';
     message?: string;
     error?: string;
   }
@@ -52,27 +52,27 @@ const Train = () => {
     } else if (model?.status === 'failed') {
       // Navigate back to upload with error when training fails
       setLocation('/upload?error=' + encodeURIComponent(model.message || 'Training failed'));
+    } else if (model?.status === 'canceled') {
+      // Navigate back to upload with error when training fails
+      setLocation('/upload?error=' + encodeURIComponent(model.message || 'Training canceled'));
     }
   }, [modelIdInt, model, setLocation]);
 
-  // Simulate training progress
+  // Update progress based on model data
   useEffect(() => {
-    if (!modelIdInt || model?.status === 'completed' || model?.status === 'failed') return;
+    if (!modelIdInt || model?.status === 'completed' || model?.status === 'failed' || model?.status === 'canceled') return;
     
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        // Max progress while waiting is 90% until we get confirmation
-        const newProgress = prev + (90 - prev) * 0.05;
-        return Math.min(newProgress, 90);
-      });
-      
-      setTimeRemaining(prev => {
-        const newTime = prev - 1;
-        return Math.max(newTime, 0);
-      });
-    }, 1000);
+    // Use actual progress from model, or keep current progress if not available
+    if (model?.progress !== undefined) {
+      setProgress(model.progress);
+    }
     
-    return () => clearInterval(interval);
+    // Update time remaining based on progress
+    if (model?.progress !== undefined) {
+      const estimatedTotalTime = 1200; // 20 minutes in seconds
+      const remainingTime = Math.ceil((100 - model.progress) / 100 * estimatedTotalTime);
+      setTimeRemaining(remainingTime);
+    }
   }, [modelIdInt, model]);
   
   // Format time remaining as MM:SS
@@ -91,7 +91,7 @@ const Train = () => {
           <div className="text-center mb-8">
             <h3 className="text-xl font-semibold mb-2">Training Your AI Model</h3>
             <p className="text-gray-600">
-              Please wait while we train your personalized AI model. This typically takes 15-20 minutes.
+              Please wait while we train your personalized AI model. This typically takes 15-20 minutes. Do not navigate from the page. The progress bar will stop at 90% until we get confirmation from the server.
             </p>
           </div>
           

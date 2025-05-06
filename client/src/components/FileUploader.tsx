@@ -58,7 +58,7 @@ const FileUploader = ({ onUploadComplete }: FileUploaderProps) => {
       console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your photos. Please try again.",
+        description: `There was an error uploading your photos. Did you try to upload more than 20 photos? Please try again. ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive"
       });
     } finally {

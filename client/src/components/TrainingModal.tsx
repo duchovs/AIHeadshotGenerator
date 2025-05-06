@@ -60,7 +60,7 @@ const TrainingModal = ({ isOpen, onClose, photoCount, photoIds }: TrainingModalP
       console.error('Training error:', error);
       toast({
         title: "Training failed",
-        description: "There was an error starting the training process. Please try again.",
+        description: `There was an error starting the training process: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive"
       });
       setIsTraining(false);
