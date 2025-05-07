@@ -1,8 +1,10 @@
+import React from 'react';
 import { Resend } from 'resend';
-import { env } from './env';
-import { Email } from '../client/src/components/ReactEmail';
+import Email from './emails/training-completion-email';
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
 
-const resend = new Resend(env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendModelCompletionEmail(userEmail: string, modelId: number) {
   try {
@@ -10,7 +12,7 @@ export async function sendModelCompletionEmail(userEmail: string, modelId: numbe
       from: 'Headshot AI <no-reply@aismartsolution.ai>',
       to: [userEmail],
       subject: 'Your AI Model Training is Complete! 🎉',
-      react: Email({ url: `https://headshot.aismartsolution.ai/generate/${modelId}` }), // Use the Email component properly
+      react: <Email url={`https://headshot.aismartsolution.ai/generate/${modelId}`}/>,
     });
 
     if (error) {
