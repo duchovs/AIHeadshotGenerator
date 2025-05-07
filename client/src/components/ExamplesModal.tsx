@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
@@ -95,7 +96,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden flex flex-col">
         <DialogHeader className="flex-row justify-between items-center p-4 border-b">
           <DialogTitle className="text-xl font-semibold">
-            {selectedExample ? `${selectedExample.style} Style Example` : 'AI Headshot Examples'}
+            {selectedExample ? `${selectedExample.style} Style Example` : 'Headshot AI Examples'}
           </DialogTitle>
         </DialogHeader>
         
@@ -165,9 +166,11 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
           </div>
         ) : (
           // Gallery view
-          <div className="p-4 overflow-y-auto">
+          <div className="relative p-4 overflow-y-auto">
+            <DialogClose>
+              <X className="h-4 w-4 right-4 top-4 absolute md:hidden" />
+            </DialogClose>
             <p className="text-gray-600 mb-4">Browse our collection of AI-generated professional headshots in various styles.</p>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {EXAMPLE_HEADSHOTS.map((example) => (
                 <div 

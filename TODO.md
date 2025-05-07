@@ -5,6 +5,6 @@ DONE add photos in recent generations
 DONE add payment through stripe
 DONE token refund if training/generation fails
 DONE send email when training completes
-add progress to db schema
+DONE add progress to db schema
+DONE add 'View Examples' page
 add progress bar to front end for training
-add 'View Examples' page
