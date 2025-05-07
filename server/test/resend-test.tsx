@@ -1,6 +1,6 @@
 import React from 'react';
 import { Resend } from 'resend';
-import Email from './email-test';
+import Email from './react-email-test';
 import dotenv from 'dotenv';
 dotenv.config({ path: '../../.env' });
 
