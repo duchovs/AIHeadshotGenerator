@@ -9,6 +9,20 @@ interface StyleCardProps {
 import { STYLE_PROMPTS, getStylePrompt } from '@shared/prompts';
 export { STYLE_PROMPTS, getStylePrompt };
 
+// Shared style tags for headshots
+export const STYLE_TAGS: Record<string, string[]> = {
+  'corporate': ['Professional', 'Formal'],
+  'casual': ['Casual', 'Natural'],
+  'artistic': ['Creative', 'Portrait'],
+  'outdoor': ['Outdoor', 'Natural'],
+  'fantasy': ['Fantasy', 'Epic']
+};
+
+export function getStyleTags(style: string) {
+  return STYLE_TAGS[style.toLowerCase()] || ['Professional'];
+}
+
+
 const StyleCard = ({ style, onClick, isSelected }: StyleCardProps) => {
   const styles: Record<string, string> = {
     'corporate': 'bg-blue-50 text-blue-600',

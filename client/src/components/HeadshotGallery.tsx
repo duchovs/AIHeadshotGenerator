@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getStyleTags } from './HeadshotStyles';
 import { Heart, Download, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,17 +98,8 @@ const HeadshotGallery = ({
     }
   };
 
-  const getStyleTags = (style: string) => {
-    const styles: Record<string, string[]> = {
-      'corporate': ['Professional', 'Formal'],
-      'casual': ['Casual', 'Natural'],
-      'artistic': ['Creative', 'Portrait'],
-      'outdoor': ['Outdoor', 'Natural'],
-      'fantasy': ['Fantasy', 'Epic']
-    };
-    
-    return styles[style.toLowerCase()] || ['Professional'];
-  };
+  // Import getStyleTags from HeadshotStyles
+
 
   const formatDate = (date: string | Date) => {
     try {

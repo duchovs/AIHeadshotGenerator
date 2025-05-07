@@ -123,10 +123,6 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden flex flex-col">
         <DialogHeader className="flex-row justify-between items-center p-4 border-b">
           <DialogTitle className="text-xl font-semibold">{headshot.style} Style Headshot</DialogTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
         </DialogHeader>
         
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
