@@ -124,6 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('error:', training.error);
     console.log('status:', training.status);
     
+    {/*}
     // Extract percentage from logs
     let progress = 0;
     if (training.logs) {
@@ -139,6 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     }
+      */}
     console.log('-------------------------')
 
     try {
@@ -157,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       switch (training.status) {
-        case 'completed':
+        case 'succeeded':
           await storage.updateModel(modelId, {
             status: 'completed',
             replicateVersionId: training.version,
