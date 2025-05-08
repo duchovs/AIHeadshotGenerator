@@ -29,6 +29,7 @@ export const models = pgTable("models", {
   userId: integer("user_id").references(() => users.id),
   replicateModelId: text("replicate_model_id").notNull(),
   replicateVersionId: text("replicate_version_id"),
+  replicateTrainingId: text("replicate_training_id"),
   status: text("status").notNull(), // "training", "completed", "failed", "canceled"
   progress: integer("progress"),
   error: text("error"),

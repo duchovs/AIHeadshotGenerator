@@ -71,20 +71,17 @@ const isAuthenticated = (req: Request, res: Response, next: any) => {
 // Backup polling mechanism in case webhook fails
 async function pollTrainingStatus(trainingId: string, modelId: number): Promise<any> {
   let status = null;
-  let version = null;
   let retryCount = 0;
   const maxRetries = 120; // 1 hour maximum polling (30s * 120)
 
   while (retryCount < maxRetries) {
     const response = await replicate.trainings.get(trainingId);
     status = response.status;
-    version = response.version;
-    //console.log('response body:',response);
-    //console.log('response logs:',response.logs);
-    //console.log('polling status:', status);
-
     // Check if model is already updated (webhook might have succeeded)
     const model = await storage.getModel(modelId);
+    if (!model) {
+      throw new Error('Model not found');
+    }
     if (model.status === 'completed' || model.status === 'failed' || model.status === 'canceled') {
       console.log('Model already updated by webhook');
       return response;
@@ -118,30 +115,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Webhook endpoint for Replicate training completion
   app.post('/api/webhooks/training-complete', async (req, res) => {
     const training = req.body;
-    console.log('-------------------------')
-    console.log('Received training webhook...');
-    console.log('id:', training.id);
-    console.log('error:', training.error);
-    console.log('status:', training.status);
     
-    {/*}
-    // Extract percentage from logs
+    // Extract percentage from logs, but only from most recent lines
     let progress = 0;
     if (training.logs) {
+      // Get only the last 20 lines (or fewer if there are less than 20)
       const logLines = training.logs.split('\n');
-      for (const line of logLines) {
+      const recentLines = logLines.slice(Math.max(0, logLines.length - 20));
+      
+      // Process only these recent lines
+      for (const line of recentLines) {
         if (line.includes('flux_train_replicate')) {
           const match = line.match(/(\d+)%/);
           if (match) {
             progress = parseInt(match[1], 10);
-            console.log('Training progress:', progress + '%');
             break;
           }
         }
       }
     }
-      */}
-    console.log('-------------------------')
 
     try {
       // Extract model ID from the training metadata or custom field
@@ -158,14 +150,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error('Model not found');
       }
 
+      // update progress in models table
+      await storage.updateModel(modelId, {
+        progress: progress
+      });
+
       switch (training.status) {
+        // DO NOT CHANGE case 'succeeded':
         case 'succeeded':
+          const trainingId = model.replicateTrainingId;
+          if (!trainingId) {
+            throw new Error('Training ID not found');
+          }
+          const response = await replicate.trainings.get(trainingId);
           await storage.updateModel(modelId, {
             status: 'completed',
-            replicateVersionId: training.version,
+            replicateVersionId: response.output?.version,
             completedAt: new Date()
           });
-          
           // Get user email and send completion notification
           const completedUser = await storage.getUser(model.userId || 0);
           if (completedUser?.email) {
@@ -512,6 +514,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // send immediate response and start background polling as backup
       res.status(200).json({ id: model.id, status: 'training', message: 'Model training started' });
+      void storage.updateModel(model.id, {
+        replicateTrainingId: training.id
+      });
       void pollTrainingStatus(training.id, model.id).then(response => {
         if (response.status === 'failed') {
           console.error('Training failed:', response.error);

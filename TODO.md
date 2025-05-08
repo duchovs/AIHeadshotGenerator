@@ -8,4 +8,4 @@ DONE send email when training completes
 DONE add progress to db schema
 DONE add 'View Examples' page
 DONE create react email
-add progress bar to front end for training
+DONE add progress bar to front end for training
