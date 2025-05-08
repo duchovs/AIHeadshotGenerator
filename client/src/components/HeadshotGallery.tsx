@@ -98,9 +98,6 @@ const HeadshotGallery = ({
     }
   };
 
-  // Import getStyleTags from HeadshotStyles
-
-
   const formatDate = (date: string | Date) => {
     try {
       const dateObj = typeof date === 'string' ? new Date(date) : date;

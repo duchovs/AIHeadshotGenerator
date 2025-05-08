@@ -16,8 +16,8 @@ import { getStyleTags } from './HeadshotStyles';
 // Mock data for examples
 const EXAMPLE_HEADSHOTS = [
   {
-    id: 3,
-    fileName: 'headshot_3.png',
+    id: 6,
+    fileName: 'headshot_6.png',
     style: 'Artistic',
     tags: getStyleTags('artistic')
   },
@@ -30,6 +30,24 @@ const EXAMPLE_HEADSHOTS = [
   {
     id: 12,
     fileName: 'headshot_12.png',
+    style: 'Corporate',
+    tags: getStyleTags('corporate')
+  },
+  {
+    id: 26,
+    fileName: 'headshot_26.png',
+    style: 'Artistic',
+    tags: getStyleTags('artistic')
+  },
+  {
+    id: 20,
+    fileName: 'headshot_20.png',
+    style: 'Fantasy',
+    tags: getStyleTags('fantasy')
+  },
+  {
+    id: 5,
+    fileName: 'headshot_5.png',
     style: 'Corporate',
     tags: getStyleTags('corporate')
   }

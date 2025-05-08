@@ -9,3 +9,5 @@ DONE add progress to db schema
 DONE add 'View Examples' page
 DONE create react email
 DONE add progress bar to front end for training
+connect generate similar on ViewHeadshotModal.tsx
+add generate video
