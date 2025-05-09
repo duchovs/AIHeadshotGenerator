@@ -42,7 +42,6 @@ const FileUploader = ({ onUploadComplete }: FileUploaderProps) => {
         credentials: 'include'
       });
 
-      console.log('authentication:', response)
       if (response.status === 401 ) {
         toast({
           title: "Not authenticated",
@@ -51,7 +50,7 @@ const FileUploader = ({ onUploadComplete }: FileUploaderProps) => {
         });
         return;
       }
-      
+
       if (!response.ok) {
         throw new Error('Upload failed');
       }

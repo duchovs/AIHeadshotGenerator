@@ -15,6 +15,7 @@ DONE on training page add that email notification will be send when completed
 DONE not clear that it's required to log-in | setup isAuthenticated
     DONE fix toast message
     DONE add auth check to /api/uploads
+DONE check console.log response in FileUploader.tsx
 connect generate similar on ViewHeadshotModal.tsx
     would need to:
         add gender to database
@@ -22,5 +23,4 @@ connect generate similar on ViewHeadshotModal.tsx
         pull prompt from headshot
         send prompt as style to generate similar
 add generate video
-check console.log response in FileUploader.tsx
 fix check on # photos
