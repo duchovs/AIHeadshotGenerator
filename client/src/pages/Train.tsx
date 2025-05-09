@@ -49,6 +49,9 @@ const Train = () => {
     if (model?.status === 'completed') {
       // Navigate to generate when training is complete
       setLocation(`/generate/${modelIdInt}`);
+    } else if (model?.status === 'training') {
+      // Navigate to train when training is in progress
+      setLocation(`/train/${modelIdInt}`);
     } else if (model?.status === 'failed') {
       // Navigate back to upload with error when training fails
       setLocation('/upload?error=' + encodeURIComponent(model.message || 'Training failed'));
@@ -91,7 +94,10 @@ const Train = () => {
           <div className="text-center mb-8">
             <h3 className="text-xl font-semibold mb-2">Training Your AI Model</h3>
             <p className="text-gray-600">
-              Please wait while we train your personalized AI model. This typically takes 15-20 minutes. Do not navigate from the page. The progress bar will stop at 90% until we get confirmation from the server.
+              We are training your personalized AI model. This process will take 15-20 minutes.
+            </p>
+            <p className="text-gray-600">
+              You can navigate away from this page. We will send you an email when training is complete.
             </p>
           </div>
           
@@ -120,7 +126,7 @@ const Train = () => {
             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 max-w-md mx-auto mb-8">
               <h4 className="font-medium text-yellow-800 mb-2">Training in Progress</h4>
               <p className="text-sm text-yellow-700">
-                Please keep this page open while training completes. You'll be automatically redirected when it's done.
+                The progress bar takes a couple of minutes to start. You will be automatically redirected when training is complete.
               </p>
             </div>
           )}

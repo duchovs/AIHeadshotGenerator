@@ -18,27 +18,37 @@ const Upload = () => {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isTrainingModalOpen, setIsTrainingModalOpen] = useState(false);
   const [, setLocation] = useLocation();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ name: string; message: string } | null>(null);
 
   // Get error from URL parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorMsg = params.get('error');
     if (errorMsg) {
-      setError(decodeURIComponent(errorMsg));
+      setError({ name: 'Training Failed', message: decodeURIComponent(errorMsg) });
       // Clear the error from URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['/api/uploads'],
     queryFn: async () => {
       const response = await fetch('/api/uploads');
-      if (!response.ok) throw new Error('Failed to fetch uploads');
+      if (response.status === 401) throw Object.assign(new Error('Please log in before uploading your photos.'), { name: 'Unauthorized' });
+      if (!response.ok) throw Object.assign(new Error('Failed to fetch uploads'), { name: 'Error' });
       return response.json();
     }
   });
+
+  useEffect(() => {
+    if (queryError) {
+      setError({
+        name: queryError.name || 'Training Failed',
+        message: queryError.message || String(queryError),
+      });
+    }
+  }, [queryError]);
 
   useEffect(() => {
     if (data) {
@@ -71,8 +81,8 @@ const Upload = () => {
       
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <h4 className="font-medium text-red-800 mb-2">Training Failed</h4>
-          <p className="text-sm text-red-700">{error}</p>
+          <h4 className="font-medium text-red-800 mb-2">{error.name}</h4>
+          <p className="text-sm text-red-700">{error.message}</p>
         </div>
       )}
       

@@ -41,6 +41,16 @@ const FileUploader = ({ onUploadComplete }: FileUploaderProps) => {
         body: formData,
         credentials: 'include'
       });
+
+      console.log('authentication:', response)
+      if (response.status === 401 ) {
+        toast({
+          title: "Not authenticated",
+          description: "You must be logged in to upload photos.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       if (!response.ok) {
         throw new Error('Upload failed');

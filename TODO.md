@@ -10,6 +10,11 @@ DONE add 'View Examples' page
 DONE create react email
 DONE add progress bar to front end for training
 DONE when deleting headshot add to new table called deleted_headshots
+DONE fix navigate away from train
+DONE on training page add that email notification will be send when completed
+DONE not clear that it's required to log-in | setup isAuthenticated
+    DONE fix toast message
+    DONE add auth check to /api/uploads
 connect generate similar on ViewHeadshotModal.tsx
     would need to:
         add gender to database
@@ -17,3 +22,5 @@ connect generate similar on ViewHeadshotModal.tsx
         pull prompt from headshot
         send prompt as style to generate similar
 add generate video
+check console.log response in FileUploader.tsx
+fix check on # photos

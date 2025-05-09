@@ -28,6 +28,12 @@ const Header = () => {
         .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0]
     : null;
 
+  const trainingModel = models
+    ? models
+        .filter((m: any) => m.status === 'training')
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+    : null;
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,14 +61,14 @@ const Header = () => {
             <Link href="/">
               <span className={`font-medium cursor-pointer ${location === "/" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Home</span>
             </Link>
-            <Link href="/gallery">
-              <span className={`font-medium cursor-pointer ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</span>
-            </Link>
-            <Link href="/train">
-              <span className={`font-medium cursor-pointer ${location === "/train" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Train</span>
+            <Link href={`/train/${trainingModel?.id}`}>
+              <span className={`font-medium cursor-pointer ${location === `/train/${trainingModel?.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Upload</span>
             </Link>
             <Link href={`/generate/${completedModel?.id}`}>
               <span className={`font-medium cursor-pointer ${location === `/generate/${completedModel?.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Generate</span>
+            </Link>
+            <Link href="/gallery">
+              <span className={`font-medium cursor-pointer ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</span>
             </Link>
           </nav>
 
@@ -93,14 +99,14 @@ const Header = () => {
                   <Link href="/">
                     <span className="font-medium text-gray-900 py-2 cursor-pointer">Home</span>
                   </Link>
-                  <Link href="/gallery">
-                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Gallery</span>
-                  </Link>
                   <Link href="/train">
-                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Train</span>
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Upload</span>
                   </Link>
                   <Link href={`/generate/${completedModel?.id}`}>
                     <span className="font-medium text-gray-600 py-2 cursor-pointer">Generate</span>
+                  </Link>
+                  <Link href="/gallery">
+                    <span className="font-medium text-gray-600 py-2 cursor-pointer">Gallery</span>
                   </Link>
                   <Link href="/tokens">
                     <span className="font-medium text-gray-600 py-2 cursor-pointer">Buy Tokens</span>

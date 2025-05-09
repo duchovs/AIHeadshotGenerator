@@ -19,7 +19,8 @@ const Gallery = () => {
     queryKey: ['headshots'],
     queryFn: async () => {
       const response = await fetch('/api/headshots');
-      if (!response.ok) throw new Error('Failed to fetch headshots');
+      if (response.status === 401) throw Object.assign(new Error('Please log in to view your headshots'), { name: 'Unauthorized' });
+      if (!response.ok) throw Object.assign(new Error('Failed to fetch headshots'), { name: 'Error' });
       const data = await response.json();
       return data as HeadshotItem[];
     }
@@ -44,9 +45,9 @@ const Gallery = () => {
       {error ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{error.name}</AlertTitle>
           <AlertDescription>
-            Failed to load headshots. Are you logged in?
+            {error.message}
           </AlertDescription>
         </Alert>
       ) : (
