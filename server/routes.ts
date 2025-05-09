@@ -770,6 +770,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid headshot ID' });
       }
 
+      const headshot = await storage.getHeadshot(id);
+      if (!headshot) {
+        return res.status(404).json({ message: 'Headshot not found' });
+      }
+      // copy to new table first
+      await storage.insertDeletedHeadshot(headshot);
       const deleted = await storage.deleteHeadshot(id);
       if (!deleted) {
         return res.status(404).json({ message: 'Headshot not found' });

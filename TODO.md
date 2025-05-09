@@ -9,5 +9,11 @@ DONE add progress to db schema
 DONE add 'View Examples' page
 DONE create react email
 DONE add progress bar to front end for training
+DONE when deleting headshot add to new table called deleted_headshots
 connect generate similar on ViewHeadshotModal.tsx
+    would need to:
+        add gender to database
+        modify routes.ts to accept optional gender, style
+        pull prompt from headshot
+        send prompt as style to generate similar
 add generate video

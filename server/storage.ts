@@ -3,6 +3,7 @@ import {
   uploadedPhotos, 
   models, 
   headshots,
+  deletedHeadshots,
   type User, 
   type InsertUser, 
   type UploadedPhoto, 
@@ -10,7 +11,9 @@ import {
   type Model,
   type InsertModel,
   type Headshot,
-  type InsertHeadshot
+  type DeletedHeadshot,
+  type InsertHeadshot,
+  type InsertDeletedHeadshot,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -156,7 +159,11 @@ export class DatabaseStorage implements IStorage {
     const [headshot] = await db.insert(headshots).values(insertHeadshot).returning();
     return headshot;
   }
-  
+
+  async insertDeletedHeadshot(insertDeletedHeadshot: InsertDeletedHeadshot): Promise<DeletedHeadshot> {
+    const [deletedHeadshot] = await db.insert(deletedHeadshots).values(insertDeletedHeadshot).returning();
+    return deletedHeadshot;
+  }
   async updateHeadshot(id: number, updates: Partial<Headshot>): Promise<Headshot | undefined> {
     const [updatedHeadshot] = await db
       .update(headshots)

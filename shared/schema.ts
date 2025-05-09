@@ -51,6 +51,21 @@ export const headshots = pgTable("headshots", {
   favorite: boolean("favorite").default(false),
 });
 
+// Table to store deleted headshots (same schema as headshots)
+export const deletedHeadshots = pgTable("deleted_headshots", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  modelId: integer("model_id").references(() => models.id),
+  style: text("style").notNull(),
+  filePath: text("file_path"),
+  imageUrl: text("image_url").notNull(),
+  replicatePredictionId: text("replicate_prediction_id").notNull(),
+  prompt: text("prompt"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  favorite: boolean("favorite").default(false),
+});
+
 // Table to track Stripe payment transactions
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
@@ -105,6 +120,11 @@ export const insertHeadshotSchema = createInsertSchema(headshots).omit({
   createdAt: true,
 });
 
+export const insertDeletedHeadshotSchema = createInsertSchema(deletedHeadshots).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Session = typeof session.$inferSelect;
 
@@ -119,6 +139,9 @@ export type Model = typeof models.$inferSelect;
 
 export type InsertHeadshot = z.infer<typeof insertHeadshotSchema>;
 export type Headshot = typeof headshots.$inferSelect;
+
+export type InsertDeletedHeadshot = z.infer<typeof insertDeletedHeadshotSchema>;
+export type DeletedHeadshot = typeof deletedHeadshots.$inferSelect;
 
 export type Payment = typeof payments.$inferSelect;
 

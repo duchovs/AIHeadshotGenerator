@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import type { HeadshotItem } from './HeadshotGallery';
 import { format } from 'date-fns';
+import { Trash2 } from 'lucide-react';
 
 interface ViewHeadshotModalProps {
   headshot: HeadshotItem;
@@ -102,6 +103,26 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
     }
   };
 
+  const handleDeleteHeadshot = async () => {
+    try {
+      await fetch(`/api/headshots/${headshot.id}`, {
+        method: 'DELETE'
+      });
+      toast({
+        title: "Headshot deleted",
+        description: "Your headshot has been deleted."
+      });
+      onClose();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete failed",
+        description: "There was an error deleting the headshot. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formatCreatedDate = (date: string | Date) => {
     try {
       const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -178,7 +199,7 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
                   <Download className="h-4 w-4" />
                   <span>Download Full Size</span>
                 </Button>
-                <Button 
+                {/*<Button 
                   variant="outline" 
                   className="w-full flex items-center justify-center gap-2"
                   onClick={handleGenerateSimilar}
@@ -186,7 +207,7 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
                 >
                   <RefreshCw className={`h-4 w-4 ${isGeneratingSimilar ? 'animate-spin' : ''}`} />
                   <span>{isGeneratingSimilar ? 'Generating...' : 'Generate Similar'}</span>
-                </Button>
+                </Button>*/}
                 <Button 
                   variant="outline" 
                   className="w-full flex items-center justify-center gap-2"
@@ -195,6 +216,16 @@ const ViewHeadshotModal = ({ headshot, isOpen, onClose }: ViewHeadshotModalProps
                   <Share2 className="h-4 w-4" />
                   <span>Share</span>
                 </Button>
+                <div className="flex justify-center">
+                <Button 
+                  variant="destructive" 
+                  className="w-24 flex items-center justify-center gap-2"
+                  onClick={handleDeleteHeadshot}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete</span>
+                </Button>
+                </div>
               </div>
             </div>
             
