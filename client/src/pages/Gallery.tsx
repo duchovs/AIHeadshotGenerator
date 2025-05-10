@@ -7,24 +7,15 @@ import {
   TabsTrigger 
 } from '@/components/ui/tabs';
 import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
-import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useHeadshots } from '@/hooks/use-headshots';
 
 const Gallery = () => {
   const [headshots, setHeadshots] = useState<HeadshotItem[]>([]);
   const [favorites, setFavorites] = useState<HeadshotItem[]>([]);
   
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['headshots'],
-    queryFn: async () => {
-      const response = await fetch('/api/headshots');
-      if (response.status === 401) throw Object.assign(new Error('Please log in to view your headshots'), { name: 'Unauthorized' });
-      if (!response.ok) throw Object.assign(new Error('Failed to fetch headshots'), { name: 'Error' });
-      const data = await response.json();
-      return data as HeadshotItem[];
-    }
-  });
+  const { data, isLoading, error } = useHeadshots();
   
   useEffect(() => {
     if (data) {

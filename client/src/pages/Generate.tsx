@@ -21,12 +21,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
-
-const generateFormSchema = z.object({
-  prompt: z.string().optional(),
-});
-
-type GenerateFormValues = z.infer<typeof generateFormSchema>;
+import { useModelStatus } from '@/hooks/use-training';
+import { generateFormSchema, GenerateFormValues } from '@shared/schema';
 
 import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
 
@@ -50,16 +46,8 @@ const Generate = () => {
     },
   });
   
-  const { data: model, isLoading: isModelLoading } = useQuery({
-    queryKey: ['/api/models', modelIdInt],
-    queryFn: async () => {
-      if (!modelIdInt) return null;
-      const response = await fetch(`/api/models/${modelIdInt}`);
-      if (!response.ok) throw new Error('Failed to fetch model');
-      return response.json();
-    },
-    enabled: !!modelIdInt,
-  });
+  // check model status
+  const { data: model, isLoading: isModelLoading } = useModelStatus(modelIdInt);
   
   useEffect(() => {
     if (!modelIdInt) {
@@ -74,6 +62,13 @@ const Generate = () => {
     }
   }, [modelIdInt, model, setLocation]);
 
+  useEffect(() => {
+    form.setValue('modelId', modelIdInt);
+    form.setValue('style', selectedStyle);
+    form.setValue('prompt', '');
+    form.setValue('gender', selectedGender);
+  }, [form, modelIdInt, selectedStyle, selectedGender]);
+
   const generateMutation = useMutation({
     mutationFn: async (values: GenerateFormValues) => {
       const response = await fetch('/api/headshots/generate', {
@@ -81,12 +76,7 @@ const Generate = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          modelId: modelIdInt,
-          style: selectedStyle,
-          prompt: values.prompt,
-          gender: selectedGender as 'male' | 'female',
-        }),
+        body: JSON.stringify(values),
       });
       
       if (!response.ok) {
@@ -106,7 +96,7 @@ const Generate = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/headshots'] });
       
       // Reset the form
-      form.reset();
+      form.setValue('prompt', '');
     },
     onError: (error) => {
       toast({

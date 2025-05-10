@@ -4,6 +4,7 @@ import { storage } from './storage';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { users, type User } from '@shared/schema';
+import { sendDiscordNotification } from './utils/discord';
 
 // Helper to transform database User to Express.User (strips null values)
 const sanitizeUser = (user: User): Express.User => ({
@@ -26,9 +27,10 @@ passport.use(new GoogleStrategy({
     try {
       // Check if user exists with this Google ID
       const existingUser = await storage.getUserByGoogleId(profile.id);
-      
+            
       if (existingUser) {
         // Update user profile in case anything changed
+        await sendDiscordNotification(`User ${profile.displayName} just logged in...`);
         const updatedUser = await storage.updateUser(existingUser.id, {
           displayName: profile.displayName,
           profilePicture: profile.photos?.[0]?.value
@@ -48,6 +50,9 @@ passport.use(new GoogleStrategy({
         profilePicture: profile.photos?.[0]?.value
       });
       
+      // Send Discord notification
+      await sendDiscordNotification(`New user signed up: ${profile.displayName} (${email})`);
+
       return done(null, sanitizeUser(newUser));
     } catch (error) {
       return done(error as Error);

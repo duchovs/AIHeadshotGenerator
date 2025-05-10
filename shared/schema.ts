@@ -125,6 +125,13 @@ export const insertDeletedHeadshotSchema = createInsertSchema(deletedHeadshots).
   createdAt: true,
 });
 
+export const generateFormSchema = z.object({
+  modelId: z.number(),
+  style: z.string(),
+  prompt: z.string().optional(),
+  gender: z.enum(['male', 'female']),
+});
+
 // Types
 export type Session = typeof session.$inferSelect;
 
@@ -144,6 +151,8 @@ export type InsertDeletedHeadshot = z.infer<typeof insertDeletedHeadshotSchema>;
 export type DeletedHeadshot = typeof deletedHeadshots.$inferSelect;
 
 export type Payment = typeof payments.$inferSelect;
+
+export type GenerateFormValues = z.infer<typeof generateFormSchema>;
 
 // Custom schemas for API requests
 export const trainModelSchema = z.object({
