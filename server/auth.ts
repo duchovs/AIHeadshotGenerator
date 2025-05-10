@@ -30,7 +30,6 @@ passport.use(new GoogleStrategy({
             
       if (existingUser) {
         // Update user profile in case anything changed
-        await sendDiscordNotification(`User ${profile.displayName} just logged in...`);
         const updatedUser = await storage.updateUser(existingUser.id, {
           displayName: profile.displayName,
           profilePicture: profile.photos?.[0]?.value

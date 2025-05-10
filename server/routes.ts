@@ -13,6 +13,7 @@ import type { TokenRequest } from "./middleware/tokenMiddleware";
 import path from "path";
 import { getStylePrompt } from './prompts';
 import Replicate from "replicate";
+import { sendDiscordNotification } from './utils/discord';
 
 // ESM-compatible __dirname and __filename
 const __filename = fileURLToPath(import.meta.url);
@@ -219,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user info
   app.get('/api/auth/user', (req, res) => {
     if (req.isAuthenticated()) {
+      sendDiscordNotification(`User ${req.user.displayName} just logged in...`);
       res.json({
         isAuthenticated: true,
         user: req.user
