@@ -7,13 +7,16 @@ import {
   TabsTrigger 
 } from '@/components/ui/tabs';
 import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
+import ExamplesGallery from '@/components/ExamplesGallery';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useHeadshots } from '@/hooks/use-headshots';
+import { EXAMPLE_HEADSHOTS } from '@/components/ExamplesModal';
 
 const Gallery = () => {
   const [headshots, setHeadshots] = useState<HeadshotItem[]>([]);
   const [favorites, setFavorites] = useState<HeadshotItem[]>([]);
+  const [examples, setExamples] = useState<HeadshotItem[]>(EXAMPLE_HEADSHOTS);
   
   const { data, isLoading, error } = useHeadshots();
   
@@ -26,22 +29,20 @@ const Gallery = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-6">
+      {error ? (
+        <ExamplesGallery 
+          headshots={examples}
+          title="Example Headshots" 
+          isLoading={isLoading}
+        />
+      ) : (
+        <>
+        <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Your Headshot Gallery</h1>
         <p className="text-gray-600 mt-2">
           View and manage all your generated headshots
         </p>
-      </div>
-      
-      {error ? (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>{error.name}</AlertTitle>
-          <AlertDescription>
-            {error.message}
-          </AlertDescription>
-        </Alert>
-      ) : (
+        </div>
         <Card>
           <CardContent className="pt-6">
             <Tabs defaultValue="all">
@@ -69,6 +70,7 @@ const Gallery = () => {
           </Tabs>
         </CardContent>
       </Card>
+      </>
       )}
     </div>
   );

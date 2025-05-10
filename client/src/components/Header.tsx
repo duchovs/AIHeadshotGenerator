@@ -64,9 +64,13 @@ const Header = () => {
             <Link href={`/train/${trainingModel?.id}`}>
               <span className={`font-medium cursor-pointer ${location === `/train/${trainingModel?.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Upload</span>
             </Link>
-            <Link href={`/generate/${completedModel?.id}`}>
-              <span className={`font-medium cursor-pointer ${location === `/generate/${completedModel?.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Generate</span>
-            </Link>
+            {completedModel?.id ? (
+              <Link href={`/generate/${completedModel.id}`}>
+                <span className={`font-medium cursor-pointer ${location === `/generate/${completedModel.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Generate</span>
+              </Link>
+            ) : (
+              <span className="font-medium cursor-not-allowed text-gray-400">Generate</span>
+            )}
             <Link href="/gallery">
               <span className={`font-medium cursor-pointer ${location === "/gallery" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Gallery</span>
             </Link>

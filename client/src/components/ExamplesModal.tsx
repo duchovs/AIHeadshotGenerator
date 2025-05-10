@@ -10,55 +10,67 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-
+import { HeadshotItem } from './HeadshotGallery';
 import { getStyleTags } from './HeadshotStyles';
 
 // Mock data for examples
-const EXAMPLE_HEADSHOTS = [
+const file_path = '/home/duchovs/code/AIHeadshotgenerator/client/public/examples/';
+export const EXAMPLE_HEADSHOTS = [
   {
     id: 6,
-    fileName: 'headshot_6.png',
+    filePath: file_path + 'headshot_6.png',
     style: 'Artistic',
-    tags: getStyleTags('artistic')
+    imageUrl: 'headshot_6.png',
+    createdAt: new Date(),
+    favorite: false,
+    modelId: 1,
   },
   {
     id: 11,
-    fileName: 'headshot_11.png',
+    filePath: file_path + 'headshot_11.png',
+    imageUrl: 'headshot_11.png',
+    createdAt: new Date(),
+    favorite: false,
+    modelId: 1,
     style: 'Fantasy',
-    tags: getStyleTags('fantasy')
   },
   {
     id: 12,
-    fileName: 'headshot_12.png',
+    filePath: file_path + 'headshot_12.png',
+    imageUrl: 'headshot_12.png',
+    createdAt: new Date(),
+    favorite: false,
+    modelId: 1,
     style: 'Corporate',
-    tags: getStyleTags('corporate')
   },
   {
     id: 26,
-    fileName: 'headshot_26.png',
+    filePath: file_path + 'headshot_26.png',
+    imageUrl: 'headshot_26.png',
+    createdAt: new Date(),
+    favorite: false,
+    modelId: 1,
     style: 'Artistic',
-    tags: getStyleTags('artistic')
   },
   {
     id: 20,
-    fileName: 'headshot_20.png',
+    filePath: file_path + 'headshot_20.png',
+    imageUrl: 'headshot_20.png',
+    createdAt: new Date(),
+    favorite: false,
+    modelId: 1,
     style: 'Fantasy',
-    tags: getStyleTags('fantasy')
   },
   {
     id: 5,
-    fileName: 'headshot_5.png',
+    filePath: file_path + 'headshot_5.png',
+    imageUrl: 'headshot_5.png',
+    createdAt: new Date(),
+    favorite: false,
+    modelId: 1,
     style: 'Corporate',
-    tags: getStyleTags('corporate')
   }
 ];
-
-interface ExampleHeadshot {
-  id: number;
-  fileName: string;
-  style: string;
-  tags: string[];
-}
 
 interface ExamplesModalProps {
   isOpen: boolean;
@@ -67,11 +79,11 @@ interface ExamplesModalProps {
 
 const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
   const { toast } = useToast();
-  const [selectedExample, setSelectedExample] = useState<ExampleHeadshot | null>(null);
+  const [selectedExample, setSelectedExample] = useState<HeadshotItem | null>(null);
 
-  const handleDownload = async (example: ExampleHeadshot) => {
+  const handleDownload = async (example: HeadshotItem) => {
     try {
-      const response = await fetch(`/examples/${example.fileName}`);
+      const response = await fetch(`/examples/${example.imageUrl}`);
       if (!response.ok) throw new Error('Failed to download image');
       
       const blob = await response.blob();
@@ -79,7 +91,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = example.fileName;
+      a.download = example.imageUrl;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -100,7 +112,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
   };
 
   // View full size example
-  const handleViewExample = (example: ExampleHeadshot) => {
+  const handleViewExample = (example: HeadshotItem) => {
     setSelectedExample(example);
   };
 
@@ -125,7 +137,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
               <div className="relative w-full max-w-md h-auto flex items-center justify-center">
                 <div className="w-full h-72 md:h-96 bg-gray-200 relative">
                   <img
-                    src={`/examples/${selectedExample.fileName}`}
+                    src={`/examples/${selectedExample.imageUrl}`}
                     alt={`${selectedExample.style} style headshot example`}
                     className="w-full h-full object-contain"
                   />
@@ -155,7 +167,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
               <div className="mb-6">
                 <h4 className="font-medium mb-2">Style Tags</h4>
                 <div className="flex flex-wrap gap-2">
-                  {selectedExample.tags.map((tag, index) => (
+                  {getStyleTags(selectedExample.style).map((tag, index) => (
                     <Badge key={index} variant="secondary" className="bg-gray-100 text-gray-600">
                       {tag}
                     </Badge>
@@ -199,7 +211,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
                   <div className="relative">
                     <div className="relative w-full h-48 bg-gray-200">
                       <img
-                        src={`/examples/${example.fileName}`}
+                        src={`/examples/${example.imageUrl}`}
                         alt={`${example.style} style headshot example`}
                         className="w-full h-full object-cover"
                       />
@@ -210,7 +222,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
                       <h4 className="font-medium text-gray-900">{example.style} Style</h4>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {example.tags.map((tag, index) => (
+                      {getStyleTags(example.style).map((tag, index) => (
                         <Badge key={index} variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200">
                           {tag}
                         </Badge>
