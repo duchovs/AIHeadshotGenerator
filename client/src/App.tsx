@@ -14,11 +14,13 @@ import Gallery from "@/pages/Gallery";
 import TokensPage from "@/pages/Tokens";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
+import Login from "@/pages/Login";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/upload" component={Upload} />
       <Route path="/train/:modelId?" component={Train} />
       <Route path="/generate/:modelId?" component={Generate} />
