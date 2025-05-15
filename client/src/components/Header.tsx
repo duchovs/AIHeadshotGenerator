@@ -59,8 +59,8 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex space-x-8">
-            <Link href="/">
-              <span className={`font-medium cursor-pointer ${location === "/" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Home</span>
+            <Link href="/getstarted">
+              <span className={`font-medium cursor-pointer ${location === "/getstarted" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Home</span>
             </Link>
             <Link href={isLoggedIn ? `/train/${trainingModel?.id}` : "/login"}>
               <span className={`font-medium cursor-pointer ${location === (isLoggedIn ? `/train/${trainingModel?.id}` : "/login") ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Upload</span>
@@ -101,7 +101,7 @@ const Header = () => {
               </SheetTrigger>
               <SheetContent side="right">
                 <nav className="flex flex-col space-y-4 mt-8">
-                  <Link href="/">
+                  <Link href="/getstarted">
                     <span className="font-medium text-gray-900 py-2 cursor-pointer">Home</span>
                   </Link>
                   <Link href={isLoggedIn ? `/train/${trainingModel?.id}` : "/login"}>
