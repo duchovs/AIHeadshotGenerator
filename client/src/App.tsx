@@ -38,7 +38,7 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const noHeaderPaths = ["/login", "/landing"];
+  const noHeaderPaths = ["/login", "/"];
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

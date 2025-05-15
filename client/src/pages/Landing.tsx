@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Slide } from 'react-slideshow-image';
+import useEmblaCarousel from 'embla-carousel-react';
 import { useExampleHeadshots } from '@/hooks/use-headshots';
 import { LoginButton, AuthState } from '@/components/LoginButton';
 import { 
@@ -21,6 +21,7 @@ const Landing = () => {
   const [selectedStyle, setSelectedStyle] = useState('professional');
   const [uploadedImage, setUploadedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [activeSlide, setActiveSlide] = useState(0);
   const [transforming, setTransforming] = useState(false);
   const [statsCount, setStatsCount] = useState({ users: 0, headshots: 0 });
@@ -35,6 +36,22 @@ const Landing = () => {
   const stylesRef = useRef(null);
   const pricingRef = useRef(null);
   const testimonialsRef = useRef(null);
+  
+  // Update activeSlide when carousel changes
+  useEffect(() => {
+    if (!emblaApi) return;
+    
+    const onSelect = () => {
+      setActiveSlide(emblaApi.selectedScrollSnap());
+    };
+    
+    emblaApi.on('select', onSelect);
+    
+    // Proper cleanup function that returns void
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi]);
 
   const HOST = import.meta.env.VITE_CLIENT_URL;
   //const exampleHeadshots = useExampleHeadshots();
@@ -508,36 +525,40 @@ const Landing = () => {
                 </div>
                 
                 <div className="slideshow-container h-128">
-                  <Slide 
-                    duration={5000} 
-                    transitionDuration={500} 
-                    indicators={true}
-                    onChange={(from, to) => setActiveSlide(to)}
-                    autoplay={false}
-                    arrows={true}
-                    cssClass="h-full"
-                  >
-                    {demoPersons.map((person) => (
-                      <div key={person.id} className="each-slide-effect h-full">
-                        <div className="flex h-full">
-                          <div className="w-1/2 h-full bg-gray-800 p-4 flex flex-col">
-                            <p className="text-sm text-gray-400 mb-2">Original Photo</p>
-                            <div className="flex-grow flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
-                              <img src={person.original} alt={`${person.name} original`} className="max-h-full" />
+                  <div className="overflow-hidden" ref={emblaRef}>
+                    <div className="flex h-full">
+                      {demoPersons.map((person) => (
+                        <div key={person.id} className="flex-[0_0_100%] min-w-0 h-full">
+                          <div className="flex h-full">
+                            <div className="w-1/2 h-full bg-gray-800 p-4 flex flex-col">
+                              <p className="text-sm text-gray-400 mb-2">Original Photo</p>
+                              <div className="flex-grow flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
+                                <img src={person.original} alt={`${person.name} original`} className="max-h-full" />
+                              </div>
                             </div>
-                          </div>
-                          <div className="w-1/2 h-full bg-gray-800 p-4 flex flex-col">
-                            <p className="text-sm text-gray-400 mb-2">
-                              <span className="capitalize">{selectedStyle}</span> Style
-                            </p>
-                            <div className="flex-grow flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
-                              <img src={person.styles[selectedStyle]} alt={`${person.name} ${selectedStyle} style`} className="max-h-full" />
+                            <div className="w-1/2 h-full bg-gray-800 p-4 flex flex-col">
+                              <p className="text-sm text-gray-400 mb-2">
+                                <span className="capitalize">{selectedStyle}</span> Style
+                              </p>
+                              <div className="flex-grow flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
+                                <img src={person.styles[selectedStyle]} alt={`${person.name} ${selectedStyle} style`} className="max-h-full" />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-2 mt-4">
+                    {demoPersons.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`w-3 h-3 rounded-full ${activeSlide === index ? 'bg-purple-500' : 'bg-gray-400'}`}
+                        onClick={() => emblaApi?.scrollTo(index)}
+                        aria-label={`Go to slide ${index + 1}`}
+                      />
                     ))}
-                  </Slide>
+                  </div>
                 </div>
               </div>
             </div>
