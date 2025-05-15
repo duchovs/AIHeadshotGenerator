@@ -3,6 +3,15 @@ import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { HeadshotItem } from '@/components/HeadshotGallery';
 
+export interface ExampleHeadshotItem {
+    id: number;
+    headshotId: number;
+    style: string;
+    filePath: string;
+    imageUrl: string;
+    createdAt: string | Date;
+}
+
 export const useHeadshots = (limit?: number) => {
   return useQuery({
     queryKey: ['/api/headshots', limit],
@@ -28,6 +37,31 @@ export const useHeadshot = (id: number) => {
       return data as HeadshotItem;
     },
     enabled: !!id
+  });
+};
+
+export const useExampleHeadshot = (id: number) => {
+  return useQuery({
+    queryKey: ['/api/examples', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/examples/${id}`);
+      if (!response.ok) throw Object.assign(new Error('Failed to fetch example headshot'), { name: 'Error' });
+      const data = await response.json();
+      return data as ExampleHeadshotItem;
+    },
+    enabled: !!id
+  });
+};
+
+export const useExampleHeadshots = (limit?: number) => {
+  return useQuery({
+    queryKey: ['/api/examples', limit],
+    queryFn: async () => {
+      const response = await fetch(`/api/examples?limit=${limit}`);
+      if (!response.ok) throw Object.assign(new Error('Failed to fetch example headshots'), { name: 'Error' });
+      const data = await response.json();
+      return data as ExampleHeadshotItem[];
+    }
   });
 };
 

@@ -548,7 +548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get model training status
-  app.get('/api/models/:id', async (req: Request, res: Response) => {
+  app.get('/api/models/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       // Prevent caching
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -721,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a specific headshot
-  app.get('/api/headshots/:id', async (req: Request, res: Response) => {
+  app.get('/api/headshots/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -740,8 +740,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all example headshots
+  app.get('/api/examples', async (req: Request, res: Response) => {
+    try {
+      const headshots = await storage.getExampleHeadshots();
+      res.status(200).json(headshots);
+    } catch (error) {
+      console.error('Error fetching example headshots:', error);
+      res.status(500).json({ message: 'Failed to fetch example headshots' });
+    }
+  });
+  
+  // Get example headshots
+  app.get('/api/examples/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid headshot ID' });
+      }
+
+      const headshot = await storage.getExampleHeadshot(id);
+      if (!headshot) {
+        return res.status(404).json({ message: 'Headshot not found' });
+      }
+
+      res.status(200).json(headshot);
+    } catch (error) {
+      console.error('Error fetching headshot:', error);
+      res.status(500).json({ message: 'Failed to fetch headshot' });
+    }
+  });
+
   // Toggle favorite status of a headshot
-  app.patch('/api/headshots/:id/favorite', async (req: Request, res: Response) => {
+  app.patch('/api/headshots/:id/favorite', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -765,7 +796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a headshot
-  app.delete('/api/headshots/:id', async (req: Request, res: Response) => {
+  app.delete('/api/headshots/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

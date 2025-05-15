@@ -20,9 +20,14 @@ const Upload = () => {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<{ name: string; message: string } | null>(null);
 
-  // Get error from URL parameter
+  // Redirect to /generate/modelId if modelId is present in query params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const modelId = params.get('modelId');
+    if (modelId) {
+      setLocation(`/generate/${modelId}`);
+      return;
+    }
     const errorMsg = params.get('error');
     if (errorMsg) {
       setError({ name: 'Training Failed', message: decodeURIComponent(errorMsg) });

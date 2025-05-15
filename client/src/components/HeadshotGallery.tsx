@@ -8,6 +8,8 @@ import ViewHeadshotModal from './ViewHeadshotModal';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { queryClient } from '@/lib/queryClient';
+import { Link } from "wouter";
+
 
 export interface HeadshotItem {
   id: number;
@@ -164,9 +166,11 @@ const HeadshotGallery = ({
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold">{title}</h3>
         {showViewAll && (
-          <Button variant="link" className="text-primary hover:text-primary-600 text-sm font-medium" asChild>
-            <a href="/gallery">View All</a>
+          <Link href="/gallery">
+          <Button variant="link" className="text-primary hover:text-primary-600 text-sm font-medium">
+            View All
           </Button>
+        </Link>
         )}
       </div>
       

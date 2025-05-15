@@ -51,6 +51,15 @@ export const headshots = pgTable("headshots", {
   favorite: boolean("favorite").default(false),
 });
 
+export const exampleHeadshots = pgTable("example_headshots", {
+  id: serial("id").primaryKey(),
+  headshotId: integer("headshot_id").references(() => headshots.id).notNull(),
+  style: text("style").notNull(),
+  prompt: text("prompt"),
+  filePath: text("file_path").notNull(),
+  imageUrl: text("image_url").notNull(),
+});
+
 // Table to store deleted headshots (same schema as headshots)
 export const deletedHeadshots = pgTable("deleted_headshots", {
   id: serial("id").primaryKey(),
@@ -120,6 +129,10 @@ export const insertHeadshotSchema = createInsertSchema(headshots).omit({
   createdAt: true,
 });
 
+export const insertExampleHeadshotSchema = createInsertSchema(exampleHeadshots).omit({
+  id: true,
+});
+
 export const insertDeletedHeadshotSchema = createInsertSchema(deletedHeadshots).omit({
   id: true,
   createdAt: true,
@@ -130,6 +143,19 @@ export const generateFormSchema = z.object({
   style: z.string(),
   prompt: z.string().optional(),
   gender: z.enum(['male', 'female']),
+});
+
+// Custom schemas for API requests
+export const trainModelSchema = z.object({
+  userId: z.number().optional(),
+  photoIds: z.array(z.number()),
+});
+
+export const generateHeadshotSchema = z.object({
+  modelId: z.number(),
+  style: z.string(),
+  prompt: z.string().optional(),
+  gender: z.enum(['male','female']),
 });
 
 // Types
@@ -147,22 +173,12 @@ export type Model = typeof models.$inferSelect;
 export type InsertHeadshot = z.infer<typeof insertHeadshotSchema>;
 export type Headshot = typeof headshots.$inferSelect;
 
+export type InsertExampleHeadshot = z.infer<typeof insertExampleHeadshotSchema>;
+export type ExampleHeadshot = typeof exampleHeadshots.$inferSelect;
+
 export type InsertDeletedHeadshot = z.infer<typeof insertDeletedHeadshotSchema>;
 export type DeletedHeadshot = typeof deletedHeadshots.$inferSelect;
 
 export type Payment = typeof payments.$inferSelect;
 
 export type GenerateFormValues = z.infer<typeof generateFormSchema>;
-
-// Custom schemas for API requests
-export const trainModelSchema = z.object({
-  userId: z.number().optional(),
-  photoIds: z.array(z.number()),
-});
-
-export const generateHeadshotSchema = z.object({
-  modelId: z.number(),
-  style: z.string(),
-  prompt: z.string().optional(),
-  gender: z.enum(['male','female']),
-});

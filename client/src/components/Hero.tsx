@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import ExamplesModal from "./ExamplesModal";
 
-const Hero = () => {
+const Hero = ({ modelId }: { modelId: number }) => {
   const [showExamples, setShowExamples] = useState(false);
   return (
     <>
@@ -18,7 +18,7 @@ const Hero = () => {
                 Upload your photos and let our AI create stunning professional headshots in various styles.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/upload">
+                <Link href={modelId ? `/generate/${modelId}` : "/upload"}>
                   <Button size="lg" variant="secondary" className="bg-transparent border border-white text-white font-medium hover:bg-white hover:bg-opacity-10">
                     Start Creating
                   </Button>

@@ -12,8 +12,7 @@ import TokenBalance from './TokenBalance';
 
 const Header = () => {
   const [location] = useLocation();
-
-  const { data: models } = useQuery({
+  const { data: models, isError } = useQuery({
     queryKey: ['/api/models'],
     queryFn: async () => {
       const res = await fetch('/api/models');
@@ -21,6 +20,8 @@ const Header = () => {
       return res.json();
     }
   });
+  // User is logged in if models is an array (fetch succeeded and not 401)
+  const isLoggedIn = Array.isArray(models);
 
   const completedModel = models
     ? models
@@ -38,7 +39,7 @@ const Header = () => {
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <Link href="/">
+          <Link href="/landing">
             <div className="flex items-center space-x-2 cursor-pointer">
               <svg 
                 viewBox="0 0 24 24" 
@@ -61,8 +62,8 @@ const Header = () => {
             <Link href="/">
               <span className={`font-medium cursor-pointer ${location === "/" ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Home</span>
             </Link>
-            <Link href={`/train/${trainingModel?.id}`}>
-              <span className={`font-medium cursor-pointer ${location === `/train/${trainingModel?.id}` ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Upload</span>
+            <Link href={isLoggedIn ? `/train/${trainingModel?.id}` : "/login"}>
+              <span className={`font-medium cursor-pointer ${location === (isLoggedIn ? `/train/${trainingModel?.id}` : "/login") ? "text-gray-900" : "text-gray-500 hover:text-gray-900"}`}>Upload</span>
             </Link>
             {completedModel?.id ? (
               <Link href={`/generate/${completedModel.id}`}>
@@ -84,13 +85,13 @@ const Header = () => {
               </div>
             </Link>
             <LoginButton />
-            
+            {/*}
             <div className="hidden sm:block">
-              <Link href="/upload">
+              <Link href={isLoggedIn ? "/upload" : "/login"}>
                 <Button variant="outline">Get Started</Button>
               </Link>
             </div>
-            
+            */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -103,7 +104,7 @@ const Header = () => {
                   <Link href="/">
                     <span className="font-medium text-gray-900 py-2 cursor-pointer">Home</span>
                   </Link>
-                  <Link href="/train">
+                  <Link href={isLoggedIn ? `/train/${trainingModel?.id}` : "/login"}>
                     <span className="font-medium text-gray-600 py-2 cursor-pointer">Upload</span>
                   </Link>
                   <Link href={`/generate/${completedModel?.id}`}>

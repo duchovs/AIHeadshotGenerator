@@ -4,32 +4,26 @@ import Hero from "@/components/Hero";
 import HeadshotGallery from "@/components/HeadshotGallery";
 import FeatureSection from "@/components/FeatureSection";
 import HeadshotStyles from "@/components/HeadshotStyles";
-import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useHeadshots } from "@/hooks/use-headshots";
+import { HeadshotItem } from "@/components/HeadshotGallery";
+import React, { useState, useEffect } from "react";
 
 const Home = () => {
-  const [headshots, setHeadshots] = useState([]);
-  
-  const { data, isLoading } = useQuery({
-    queryKey: ['/api/headshots'],
-    queryFn: async () => {
-      // Add limit=4 to only get the most recent headshots
-      const response = await fetch('/api/headshots?limit=4');
-      if (!response.ok) throw new Error('Failed to fetch headshots');
-      return response.json();
-    }
-  });
-  
+  const [headshots, setHeadshots] = useState<HeadshotItem[]>([]);
+  const { data, isLoading, error } = useHeadshots();
+  const [modelId, setModelId] = useState<number | undefined>(undefined);
+
   useEffect(() => {
-    if (data) {
+    if (data && data.length > 0) {
       setHeadshots(data);
+      setModelId(data[0].modelId);
     }
   }, [data]);
 
   return (
     <div>
-      <Hero />
-      
+      <Hero modelId={modelId}/>
+     
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <HeadshotGallery headshots={headshots} isLoading={isLoading} />
         
@@ -42,7 +36,7 @@ const Home = () => {
           <p className="text-gray-600 max-w-2xl mx-auto mb-8">
             Get started in minutes and see how our AI can transform your photos into stunning professional headshots.
           </p>
-          <Link href="/upload">
+          <Link href={modelId ? `/upload?modelId=${modelId}` : "/upload"}>
             <Button size="lg" className="px-8">
               Start Creating Now
             </Button>

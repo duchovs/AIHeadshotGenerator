@@ -3,6 +3,7 @@ import {
   uploadedPhotos, 
   models, 
   headshots,
+  exampleHeadshots,
   deletedHeadshots,
   type User, 
   type InsertUser, 
@@ -14,6 +15,8 @@ import {
   type DeletedHeadshot,
   type InsertHeadshot,
   type InsertDeletedHeadshot,
+  type ExampleHeadshot,
+  type InsertExampleHeadshot,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -45,6 +48,13 @@ export interface IStorage {
   createHeadshot(headshot: InsertHeadshot): Promise<Headshot>;
   updateHeadshot(id: number, updates: Partial<Headshot>): Promise<Headshot | undefined>;
   deleteHeadshot(id: number): Promise<boolean>;
+
+  insertDeletedHeadshot(insertDeletedHeadshot: InsertDeletedHeadshot): Promise<DeletedHeadshot>;
+  
+  // Example Headshot methods
+  getExampleHeadshot(id: number): Promise<ExampleHeadshot | undefined>;
+  createExampleHeadshot(headshot: Headshot): Promise<ExampleHeadshot>;
+  deleteExampleHeadshot(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -160,6 +170,11 @@ export class DatabaseStorage implements IStorage {
     return headshot;
   }
 
+  async deleteHeadshot(id: number): Promise<boolean> {
+    const result = await db.delete(headshots).where(eq(headshots.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
   async insertDeletedHeadshot(insertDeletedHeadshot: InsertDeletedHeadshot): Promise<DeletedHeadshot> {
     const [deletedHeadshot] = await db.insert(deletedHeadshots).values(insertDeletedHeadshot).returning();
     return deletedHeadshot;
@@ -174,8 +189,29 @@ export class DatabaseStorage implements IStorage {
     return updatedHeadshot;
   }
   
-  async deleteHeadshot(id: number): Promise<boolean> {
-    const result = await db.delete(headshots).where(eq(headshots.id, id));
+  async getExampleHeadshot(id: number): Promise<ExampleHeadshot | undefined> {
+    const [exampleHeadshot] = await db.select().from(exampleHeadshots).where(eq(exampleHeadshots.id, id));
+    return exampleHeadshot;
+  }
+
+  async getExampleHeadshots(): Promise<ExampleHeadshot[]> {
+    return await db.select().from(exampleHeadshots);
+  }
+
+  async createExampleHeadshot(headshot: Headshot): Promise<ExampleHeadshot> {
+    // Insert the relevant fields from the headshot into exampleHeadshots
+    const [exampleHeadshot] = await db.insert(exampleHeadshots).values({
+      style: headshot.style,
+      filePath: headshot.filePath!, // filePath is optional in headshots, required in exampleHeadshots
+      imageUrl: headshot.imageUrl,
+      prompt: headshot.prompt,
+      headshotId: headshot.id,
+    }).returning();
+    return exampleHeadshot;
+  }
+
+  async deleteExampleHeadshot(id: number): Promise<boolean> {
+    const result = await db.delete(exampleHeadshots).where(eq(exampleHeadshots.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 }

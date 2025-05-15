@@ -10,65 +10,57 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { HeadshotItem } from './HeadshotGallery';
+import { ExampleHeadshotItem } from '@/hooks/use-headshots';
 import { getStyleTags } from './HeadshotStyles';
 
-// Mock data for examples
-const file_path = '/home/duchovs/code/AIHeadshotgenerator/client/public/examples/';
-export const EXAMPLE_HEADSHOTS = [
+export const EXAMPLE_HEADSHOTS: ExampleHeadshotItem[] = [
   {
-    id: 6,
-    filePath: file_path + 'headshot_6.png',
+    id: 1,
+    headshotId: 21,
     style: 'Artistic',
-    imageUrl: 'headshot_6.png',
+    filePath: 'headshot_21.png',
+    imageUrl: 'headshot_21.png',
     createdAt: new Date(),
-    favorite: false,
-    modelId: 1,
   },
   {
-    id: 11,
-    filePath: file_path + 'headshot_11.png',
-    imageUrl: 'headshot_11.png',
-    createdAt: new Date(),
-    favorite: false,
-    modelId: 1,
-    style: 'Fantasy',
-  },
-  {
-    id: 12,
-    filePath: file_path + 'headshot_12.png',
-    imageUrl: 'headshot_12.png',
-    createdAt: new Date(),
-    favorite: false,
-    modelId: 1,
+    id: 2,
+    headshotId: 30,
     style: 'Corporate',
+    filePath: 'headshot_30.png',
+    imageUrl: 'headshot_30.png',
+    createdAt: new Date(),
   },
   {
-    id: 26,
-    filePath: file_path + 'headshot_26.png',
-    imageUrl: 'headshot_26.png',
+    id: 3,
+    headshotId: 31,
+    style: 'Casual',
+    filePath: 'headshot_31.png',
+    imageUrl: 'headshot_31.png',
     createdAt: new Date(),
-    favorite: false,
-    modelId: 1,
-    style: 'Artistic',
   },
   {
-    id: 20,
-    filePath: file_path + 'headshot_20.png',
-    imageUrl: 'headshot_20.png',
+    id: 4,
+    headshotId: 52,
+    style: 'Outdoor',
+    filePath: 'headshot_52.png',
+    imageUrl: 'headshot_52.png',
     createdAt: new Date(),
-    favorite: false,
-    modelId: 1,
-    style: 'Fantasy',
   },
   {
     id: 5,
-    filePath: file_path + 'headshot_5.png',
-    imageUrl: 'headshot_5.png',
+    headshotId: 53,
+    style: 'Fantasy',
+    filePath: 'headshot_53.png',
+    imageUrl: 'headshot_53.png',
     createdAt: new Date(),
-    favorite: false,
-    modelId: 1,
-    style: 'Corporate',
+  },
+  {
+    id: 6,
+    headshotId: 6,
+    style: 'Artistic',
+    filePath: 'headshot_6.png',
+    imageUrl: 'headshot_6.png',
+    createdAt: new Date(),
   }
 ];
 
@@ -79,9 +71,9 @@ interface ExamplesModalProps {
 
 const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
   const { toast } = useToast();
-  const [selectedExample, setSelectedExample] = useState<HeadshotItem | null>(null);
+  const [selectedExample, setSelectedExample] = useState<ExampleHeadshotItem | null>(null);
 
-  const handleDownload = async (example: HeadshotItem) => {
+  const handleDownload = async (example: ExampleHeadshotItem) => {
     try {
       const response = await fetch(`/examples/${example.imageUrl}`);
       if (!response.ok) throw new Error('Failed to download image');
@@ -112,7 +104,7 @@ const ExamplesModal = ({ isOpen, onClose }: ExamplesModalProps) => {
   };
 
   // View full size example
-  const handleViewExample = (example: HeadshotItem) => {
+  const handleViewExample = (example: ExampleHeadshotItem) => {
     setSelectedExample(example);
   };
 

@@ -10,12 +10,16 @@ type User = {
   profilePicture?: string;
 };
 
-interface AuthState {
+export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
 }
 
-export const LoginButton = () => {
+interface LoginButtonProps {
+  onAuthState?: (authState: AuthState) => void;
+}
+
+export const LoginButton = ({ onAuthState }: LoginButtonProps) => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     user: null
@@ -29,6 +33,7 @@ export const LoginButton = () => {
       const response = await fetch('/api/auth/user');
       const data = await response.json();
       setAuthState(data);
+      if (onAuthState) onAuthState(data);
     } catch (error) {
       console.error('Error fetching auth status:', error);
       toast({
@@ -87,9 +92,12 @@ export const LoginButton = () => {
         <span className="text-sm font-medium mr-2">
           {authState.user?.displayName || authState.user?.username}
         </span>
-        <Button variant="outline" onClick={handleLogout}>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium transition"
+        >
           Logout
-        </Button>
+        </button>
       </div>
     );
   }
@@ -142,4 +150,5 @@ export const LoginButton = () => {
   );
 };
 
+// Export as default for backward compatibility
 export default LoginButton;
