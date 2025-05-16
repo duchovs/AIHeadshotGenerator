@@ -353,7 +353,7 @@ const Landing = () => {
           
           <div className="flex space-x-3">
             <LoginButton onAuthState={setAuthState} />
-            <a href="/upload">
+            <a href={authState && authState.isAuthenticated ? "/upload" : "/login"}>
             <button className="px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium transition">
               Get Started
             </button>
@@ -392,7 +392,7 @@ const Landing = () => {
               </div>
               
               <div className="flex flex-wrap gap-4">
-                <a href="/upload">
+              <a href={authState && authState.isAuthenticated ? "/upload" : "/login"}>
                 <button className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium flex items-center gap-2 transition shadow-lg shadow-purple-900/20">
                   Generate Your Headshot <ArrowRight size={16} />
                 </button>

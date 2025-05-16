@@ -1,5 +1,11 @@
 import axios from 'axios';
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1365770487317139607/a-n1RX98BKDUeyDiRwU1f0gS5bH_-bvfA_b1ycKiA-FRQTwuQCUm9P3aMHRIji0z-8V-';
+import { env } from '../env';
+
+const DISCORD_WEBHOOK_URL = env.DISCORD_WEBHOOK_URL;
+
+if (!DISCORD_WEBHOOK_URL) {
+  throw new Error('DISCORD_WEBHOOK_URL environment variable is not set');
+}
 
 export const sendDiscordNotification = async (message: string) => {
   try {
