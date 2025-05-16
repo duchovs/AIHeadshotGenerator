@@ -631,7 +631,7 @@ const Landing = () => {
                       </div>
                       <div>
                         <h4 className="font-medium">Fantasy</h4>
-                        <p className="text-xs text-gray-400">For C-level positions and corporate leadership</p>
+                        <p className="text-xs text-gray-400">creative roles, imaginative portfolios, or anyone seeking a magical, otherworldly look</p>
                       </div>
                     </div>
                     {selectedStyle === 'fantasy' && <CheckCircle size={20} className="text-purple-500" />}
