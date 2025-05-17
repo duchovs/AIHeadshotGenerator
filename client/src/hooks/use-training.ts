@@ -102,14 +102,20 @@ export const useModelStatus = (modelId?: number) => {
   });
 }
 
-// only need this if they have multiple models
-export const useModels = () => {
+export const useCompletedModel = () => {
   return useQuery({
     queryKey: ['/api/models'],
     queryFn: async () => {
       const response = await fetch('/api/models');
-      if (!response.ok) throw new Error('Failed to fetch models');
-      return response.json();
-    }
+      if (!response.ok) throw new Error('Failed to fetch completed models');
+      const data = await response.json();
+      console.log('model data:', data);
+      if (data.status === 'completed') {
+        console.log('completed model:', data.id);
+        return data.id;
+      }
+      return null;
+    },
   });
 };
+

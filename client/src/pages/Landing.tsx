@@ -86,7 +86,7 @@ const Landing = () => {
     {
       name: "Sarah J.",
       role: "Marketing Executive",
-      image: HOST+'/profile/sara.webp',
+      image: HOST+'/profile/sarah.webp',
       text: "I needed professional headshots for a conference but didn't have time for a photo session. This service delivered stunning results in minutes!"
     },
     {

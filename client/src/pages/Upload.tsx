@@ -7,6 +7,7 @@ import StepIndicator from '@/components/StepIndicator';
 import TrainingModal from '@/components/TrainingModal';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { useCompletedModel } from '@/hooks/use-training';
 
 interface UploadedPhoto {
   id: number;
@@ -19,6 +20,7 @@ const Upload = () => {
   const [isTrainingModalOpen, setIsTrainingModalOpen] = useState(false);
   const [, setLocation] = useLocation();
   const [error, setError] = useState<{ name: string; message: string } | null>(null);
+  //const { data: completedModel } = useCompletedModel();
 
   // Redirect to /generate/modelId if modelId is present in query params
   useEffect(() => {
@@ -28,13 +30,18 @@ const Upload = () => {
       setLocation(`/generate/${modelId}`);
       return;
     }
+{/*
+    if (completedModel) {
+      setLocation(`/generate/${completedModel}`);
+    }
+*/}
     const errorMsg = params.get('error');
     if (errorMsg) {
       setError({ name: 'Training Failed', message: decodeURIComponent(errorMsg) });
       // Clear the error from URL
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  });//, [completedModel, setLocation]);
 
   const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['/api/uploads'],

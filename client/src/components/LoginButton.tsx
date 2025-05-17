@@ -61,6 +61,7 @@ export const LoginButton = ({ onAuthState }: LoginButtonProps) => {
         isAuthenticated: false,
         user: null
       });
+      window.location.href = '/';
       toast({
         title: 'Logged out',
         description: 'You have been successfully logged out.'

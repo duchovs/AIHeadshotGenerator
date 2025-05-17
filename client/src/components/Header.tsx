@@ -39,7 +39,7 @@ const Header = () => {
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <Link href="/landing">
+          <Link href="/getstarted">
             <div className="flex items-center space-x-2 cursor-pointer">
               <svg 
                 viewBox="0 0 24 24" 
