@@ -57,17 +57,22 @@ const LegalPage = () => {
             <h3 className="text-xl font-semibold text-white mt-6 mb-3">Use License</h3>
             <ol className="list-decimal list-inside mb-4 space-y-2 pl-4 leading-relaxed">
               <li>
-                Permission is granted to temporarily download one copy of the materials (information or software) on AI Headshot Generator's website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
+                <strong>Ownership and Usage Rights:</strong> You retain full ownership and all rights to the headshot images generated through our service. This includes, but is not limited to, the right to:
                 <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
-                  <li>modify or copy the materials;</li>
-                  <li>use the materials for any commercial purpose, or for any public display (commercial or non-commercial);</li>
-                  <li>attempt to decompile or reverse engineer any software contained on AI Headshot Generator's website;</li>
-                  <li>remove any copyright or other proprietary notations from the materials; or</li>
-                  <li>transfer the materials to another person or "mirror" the materials on any other server.</li>
+                  <li>Download and save your generated headshots</li>
+                  <li>Use your headshots for personal or commercial purposes</li>
+                  <li>Modify, edit, or alter your generated headshots</li>
+                  <li>Share and distribute your headshots on social media, websites, or other platforms</li>
+                  <li>Use your headshots for professional profiles, marketing materials, or any other legal purpose</li>
                 </ul>
               </li>
               <li>
-                This license shall automatically terminate if you violate any of these restrictions and may be terminated by AI Headshot Generator at any time. Upon terminating your viewing of these materials or upon the termination of this license, you must destroy any downloaded materials in your possession whether in electronic or printed format.
+                <strong>Service Usage:</strong> While you own the generated images, you agree not to:
+                <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
+                  <li>Use the service to generate illegal, harmful, or offensive content</li>
+                  <li>Attempt to reverse engineer or copy the underlying technology</li>
+                  <li>Use the service in a way that violates these terms or applicable laws</li>
+                </ul>
               </li>
             </ol>
             <h3 className="text-xl font-semibold text-white mt-6 mb-3">Disclaimer</h3>
@@ -87,7 +92,7 @@ const LegalPage = () => {
             </p>
              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Contact Us</h3>
             <p className="mb-4 leading-relaxed">
-              If you have any questions about these Terms, please contact us at [Your Contact Email/Link to Contact Page].
+              If you have any questions about these Terms, please contact us at support@aismartsolution.ai.
             </p>
           </section>
         </div>
