@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useExampleHeadshots } from '@/hooks/use-headshots';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { data: exampleHeadshots, isLoading: isLoadingExampleHeadshots, error: exampleHeadshotsError } = useExampleHeadshots();
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -80,12 +82,12 @@ const Login = () => {
     <div className="min-h-screen flex flex-col">
       {/* Background collage */}
       <div className="fixed inset-0 grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 grid-rows-4 gap-1 opacity-90">
-        {Array.from({ length: 32 }).map((_, i) => (
+        {exampleHeadshots?.map((headshot, i) => (
           <div 
-            key={i} 
+            key={headshot.id || i} 
             className="bg-cover bg-center"
             style={{ 
-              backgroundImage: `url(/examples/headshot_${(i % 20) + 1}.png)`,
+              backgroundImage: `url(${headshot.imageUrl})`,
               filter: 'brightness(0.8)'
             }}
           />

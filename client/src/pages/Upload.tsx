@@ -20,28 +20,58 @@ const Upload = () => {
   const [isTrainingModalOpen, setIsTrainingModalOpen] = useState(false);
   const [, setLocation] = useLocation();
   const [error, setError] = useState<{ name: string; message: string } | null>(null);
-  //const { data: completedModel } = useCompletedModel();
+  const { data: completedModel, isLoading: isLoadingCompletedModel, isSuccess: isCompletedModelSuccess, error: completedModelError } = useCompletedModel();
 
   // Redirect to /generate/modelId if modelId is present in query params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const modelId = params.get('modelId');
-    if (modelId) {
-      setLocation(`/generate/${modelId}`);
-      return;
+    const modelIdFromParams = params.get('modelId');
+
+    // Priority 1: Redirect if modelId is in URL query params
+    if (modelIdFromParams) {
+      if (window.location.pathname !== `/generate/${modelIdFromParams}`) {
+        setLocation(`/generate/${modelIdFromParams}`);
+      }
+      return; // Exit: Handled by URL param
     }
-{/*
-    if (completedModel) {
-      setLocation(`/generate/${completedModel}`);
+
+    // Priority 2: Redirect if a completed model is fetched and we are on /upload
+    // Only proceed if the query has finished loading (not isLoading)
+    if (!isLoadingCompletedModel) {
+      if (isCompletedModelSuccess && completedModel) {
+        // Only redirect if we are currently on the /upload page
+        if (window.location.pathname === '/upload') {
+          setLocation(`/generate/${completedModel}`);
+          return; // Exit: Handled by completedModel
+        }
+      } else if (completedModelError) {
+        // Optionally, set an error state here to inform the user
+      }
     }
-*/}
-    const errorMsg = params.get('error');
-    if (errorMsg) {
-      setError({ name: 'Training Failed', message: decodeURIComponent(errorMsg) });
-      // Clear the error from URL
-      window.history.replaceState({}, '', window.location.pathname);
+    // If isLoadingCompletedModel is true, we wait for it to finish.
+
+    // Priority 3: Handle 'error' from URL query params (e.g., from a failed OAuth or payment)
+    // This should run if no redirect has happened above.
+    const errorMsgFromParams = params.get('error');
+    if (errorMsgFromParams) {
+      const decodedErrorMsg = decodeURIComponent(errorMsgFromParams);
+      if (!error || error.message !== decodedErrorMsg) { // Avoid re-setting same error
+        setError({ name: 'Training Failed', message: decodedErrorMsg });
+      }
+      // Clear error from URL to prevent it from being processed again on refresh.
+      if (params.has('error')) {
+        const newPath = window.location.pathname;
+        window.history.replaceState({}, '', newPath);
+      }
     }
-  });//, [completedModel, setLocation]);
+  }, [
+    completedModel,
+    isLoadingCompletedModel,
+    isCompletedModelSuccess,
+    completedModelError,
+    setLocation,
+    error // current component error state
+  ]);
 
   const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['/api/uploads'],

@@ -104,18 +104,37 @@ export const useModelStatus = (modelId?: number) => {
 
 export const useCompletedModel = () => {
   return useQuery({
-    queryKey: ['/api/models'],
+    queryKey: ['/api/models', 'checkCompleted'], // More specific query key
     queryFn: async () => {
       const response = await fetch('/api/models');
-      if (!response.ok) throw new Error('Failed to fetch completed models');
-      const data = await response.json();
-      console.log('model data:', data);
-      if (data.status === 'completed') {
-        console.log('completed model:', data.id);
-        return data.id;
+      
+      if (!response.ok) {
+        // If the API returns 404, it might mean no models exist or none are completed.
+        // Treat this as "no completed model found" rather than an error for this specific hook's purpose.
+        if (response.status === 404) {
+          return null;
+        }
+        // For other errors, throw to let React Query handle it.
+        throw new Error(`Failed to fetch completed models, status: ${response.status}`);
       }
-      return null;
+      
+      const data = await response.json();
+
+      // Expecting data to be an array of models
+      if (Array.isArray(data) && data.length > 0) {
+        // Check if any model in the array has status 'completed'
+        // This assumes the API might return multiple models, and we're looking for the first completed one.
+        // If the API is guaranteed to return only one relevant model or an empty array, this logic might simplify.
+        const completed = data.find(model => model.status === 'completed');
+        if (completed && completed.id) {
+          return completed.id as string; // Assuming ID is a string
+        }
+      }
+      return null; // No completed model found
     },
+    // Optional: Configure staleTime or refetchOnWindowFocus if needed
+    // staleTime: 5 * 60 * 1000, // e.g., data is fresh for 5 minutes
+    // refetchOnWindowFocus: false,
   });
 };
 
