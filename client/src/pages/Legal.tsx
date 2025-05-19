@@ -3,37 +3,19 @@ import { useLocation } from 'wouter';
 
 const LegalPage = () => {
   const [location] = useLocation();
-  const mainRef = useRef<HTMLDivElement>(null);
-  const privacyPolicyRef = useRef<HTMLDivElement>(null);
-  const termsOfServiceRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef(null);
+  const privacyPolicyRef = useRef(null);
+  const termsOfServiceRef = useRef(null);
 
   useEffect(() => {
-    const handleScrollToHash = () => {
       const hash = window.location.hash;
       if (hash) {
-        const id = hash.replace('#', '');
-        const element = document.getElementById(id);
+        const element = document.getElementById(hash.substring(1));
         if (element) {
-          // Small delay to ensure the component has rendered
-          setTimeout(() => {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }, 50);
+          element.scrollIntoView({ behavior: 'smooth' });
         }
-      } else if (mainRef.current) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    };
-
-    // Initial scroll
-    handleScrollToHash();
-
-    // Handle browser back/forward navigation
-    window.addEventListener('popstate', handleScrollToHash);
-    
-    return () => {
-      window.removeEventListener('popstate', handleScrollToHash);
-    };
-  }, [location]);
+    }, []);
   
   return (
     <div ref={mainRef} className="min-h-screen bg-slate-900 text-slate-300 flex flex-col">

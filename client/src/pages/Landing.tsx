@@ -36,6 +36,7 @@ const Landing = () => {
   const stylesRef = useRef(null);
   const pricingRef = useRef(null);
   const testimonialsRef = useRef(null);
+  const comparisonRef = useRef(null);
   
   // Update activeSlide when carousel changes
   useEffect(() => {
@@ -809,7 +810,8 @@ const Landing = () => {
           </div>
 
           {/* Competitor Comparison */}
-          <div id="comparison" className="max-w-4xl mx-auto bg-gray-800/30 backdrop-blur-sm rounded-xl border border-purple-500/10 overflow-hidden mb-16">
+          <section id="comparison" ref={comparisonRef} className="py-20 relative"></section>
+          <div className="max-w-4xl mx-auto bg-gray-800/30 backdrop-blur-sm rounded-xl border border-purple-500/10 overflow-hidden mb-16">
             <div className="p-6 border-b border-purple-500/10">
               <h3 className="text-xl font-bold">How We Compare</h3>
               <p className="text-gray-400 text-sm">See how our service stacks up against competitors</p>

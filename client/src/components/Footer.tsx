@@ -40,8 +40,8 @@ const Footer = () => {
               <ul className="space-y-2 text-sm">
                 <li><a href="https://aismartsolution.ai" className="text-gray-400 hover:text-purple-400 transition">About Us</a></li>
                 <li><a href="https://aismartsolution.ai/#contact" className="text-gray-400 hover:text-purple-400 transition">Contact Us</a></li>
-                <li><Link href="/legal#privacy-policy" className="text-gray-400 hover:text-purple-400 transition">Privacy Policy</Link></li>
-                <li><Link href="/legal#terms-of-service" className="text-gray-400 hover:text-purple-400 transition">Terms of Service</Link></li>
+                <li><a href="/legal#privacy-policy" className="text-gray-400 hover:text-purple-400 transition">Privacy Policy</a></li>
+                <li><a href="/legal#terms-of-service" className="text-gray-400 hover:text-purple-400 transition">Terms of Service</a></li>
               </ul>
             </div>
           </div>
