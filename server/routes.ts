@@ -13,6 +13,7 @@ import type { TokenRequest } from "./middleware/tokenMiddleware";
 import path from "path";
 import { getStylePrompt } from './prompts';
 import Replicate from "replicate";
+import cors from 'cors';
 import { sendDiscordNotification } from './utils/discord';
 
 // ESM-compatible __dirname and __filename
@@ -168,6 +169,38 @@ async function pollTrainingStatus(trainingId: string, modelId: number): Promise<
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // CORS Configuration
+  const corsOptions = {
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Replace with your frontend's actual origin(s) for production
+      // For development, you can allow specific localhost ports or all origins (not recommended for production)
+      const allowedOrigins = [
+        'http://localhost:8081', // Common React dev port
+        'http://10.10.100.65:8081', // Common Vite dev port
+        'http://*:8081',
+        // Add your frontend's deployed URL here for production
+      ];
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS: Request from origin ${origin} blocked.`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Specify allowed headers
+    credentials: true, // Important if your frontend needs to send cookies or Authorization headers
+    optionsSuccessStatus: 200 // For legacy browser compatibility
+  };
+
+  // Example of applying CORS to a specific OPTIONS pre-flight request for all routes
+  // This can be useful if you want to handle OPTIONS globally then apply more specific CORS for other methods
+  // app.options('*', cors(corsOptions)); // Enable pre-flight across-the-board.
+
+  // Apply CORS globally to all routes (if you want to allow all configured origins for all paths)
+  // For path-specific CORS, apply `cors(corsOptions)` to individual routes or routers.
+  // Example: app.use(cors(corsOptions)); // This would enable CORS for all routes based on corsOptions
+
   // Configure body parser to accept larger payloads
   app.use(express.json({limit: '50mb'}));
   app.use(express.urlencoded({limit: '50mb', extended: true}));
@@ -639,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all models for a user
-  app.get('/api/models', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/models', cors(corsOptions), isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
       const models = await storage.getModelsByUserId(userId);
@@ -898,7 +931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all example headshots
-  app.get('/api/examples', async (req: Request, res: Response) => {
+  app.get('/api/examples', cors(corsOptions), async (req: Request, res: Response) => {
     try {
       const headshots = await storage.getExampleHeadshots();
       res.status(200).json(headshots);
@@ -976,6 +1009,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error deleting headshot:', error);
       res.status(500).json({ message: 'Failed to delete headshot' });
     }
+  });
+
+  // Example route with CORS enabled
+  app.get('/api/cors-test', cors(corsOptions), (req: Request, res: Response) => {
+    res.json({ message: 'CORS is enabled for this path!' });
   });
 
   const httpServer = createServer(app);

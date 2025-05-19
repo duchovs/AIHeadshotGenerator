@@ -53,6 +53,16 @@ const Landing = () => {
     };
   }, [emblaApi]);
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const element = document.getElementById(hash.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, []);
+
   const HOST = import.meta.env.VITE_CLIENT_URL;
   //const exampleHeadshots = useExampleHeadshots();
 
@@ -450,7 +460,7 @@ const Landing = () => {
       </section>
 
       {/* How It Works Section */}
-      <section ref={featuresRef} className="py-20 bg-gray-900/50 backdrop-blur-sm relative">
+      <section id="how-it-works" ref={featuresRef} className="py-20 bg-gray-900/50 backdrop-blur-sm relative">
         <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent"></div>
         
         <div className="container mx-auto px-4 relative z-10">
@@ -504,7 +514,7 @@ const Landing = () => {
       </section>
 
       {/* Interactive Style Gallery */}
-      <section ref={stylesRef} className="py-20 relative">
+      <section id="examples" ref={stylesRef} className="py-20 relative">
         <div className="absolute top-20 right-0 w-96 h-96 bg-red-700/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 left-0 w-96 h-96 bg-purple-700/20 rounded-full blur-3xl"></div>
         
@@ -741,14 +751,15 @@ const Landing = () => {
       */}
 
       {/* Pricing Section with Comparison */}
-      <section ref={pricingRef} className="py-20 relative">
+      <section id="pricing" ref={pricingRef} className="py-20 relative">
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-700/20 rounded-full blur-3xl"></div>
-        
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Transparent Pricing</h2>
             <p className="text-gray-400 max-w-2xl mx-auto">Choose the plan that works best for your needs. All plans include our AI-powered headshot generation.</p>
           </div>
+          
+          {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {pricingPlans.map((plan, index) => (
               <div 
@@ -784,21 +795,21 @@ const Landing = () => {
                   </div>
                   
                   <a href={authState && authState.isAuthenticated ? "/tokens" : "/login"}>
-                  <button className={`w-full py-3 rounded-lg font-medium transition ${
-                    plan.isPopular 
-                      ? 'bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white' 
-                      : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-                  }`}>
-                    Select {plan.name}
-                  </button>
+                    <button className={`w-full py-3 rounded-lg font-medium transition ${
+                      plan.isPopular 
+                        ? 'bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white' 
+                        : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                    }`}>
+                      Select {plan.name}
+                    </button>
                   </a>
                 </div>
               </div>
             ))}
           </div>
-          
+
           {/* Competitor Comparison */}
-          <div className="max-w-4xl mx-auto bg-gray-800/30 backdrop-blur-sm rounded-xl border border-purple-500/10 overflow-hidden">
+          <div id="comparison" className="max-w-4xl mx-auto bg-gray-800/30 backdrop-blur-sm rounded-xl border border-purple-500/10 overflow-hidden mb-16">
             <div className="p-6 border-b border-purple-500/10">
               <h3 className="text-xl font-bold">How We Compare</h3>
               <p className="text-gray-400 text-sm">See how our service stacks up against competitors</p>
@@ -874,9 +885,9 @@ const Landing = () => {
           </div>
           
           <div className="mt-12 text-center">
-            <button className="px-6 py-3 rounded-lg bg-gray-800/50 border border-purple-500/20 hover:border-purple-500/50 text-gray-200 flex items-center gap-2 mx-auto transition">
+            {/*<button className="px-6 py-3 rounded-lg bg-gray-800/50 border border-purple-500/20 hover:border-purple-500/50 text-gray-200 flex items-center gap-2 mx-auto transition">
               Read More Reviews <ChevronRight size={16} />
-            </button>
+            </button>*/}
           </div>
         </div>
       </section>

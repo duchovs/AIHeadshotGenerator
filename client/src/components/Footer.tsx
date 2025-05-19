@@ -7,7 +7,7 @@ const Footer = () => {
     {/* Footer */}
       <footer className="bg-gray-900 border-t border-purple-500/20 py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Camera className="text-purple-500" size={24} />
@@ -15,38 +15,38 @@ const Footer = () => {
               </div>
               <p className="text-gray-400 text-sm">Transforming ordinary photos into professional headshots using advanced AI technology.</p>
             </div>
-            
             <div>
               <h4 className="text-lg text-white font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Features</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Pricing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Use Cases</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Examples</a></li>
+                <li><a href="/#comparison" className="text-gray-400 hover:text-purple-400 transition">Features</a></li>
+                <li><a href="/#pricing" className="text-gray-400 hover:text-purple-400 transition">Pricing</a></li>
+                <li><a href="/#how-it-works" className="text-gray-400 hover:text-purple-400 transition">How It Works</a></li>
+                <li><a href="/#examples" className="text-gray-400 hover:text-purple-400 transition">Examples</a></li>
               </ul>
             </div>
-            
+            {/*}
             <div>
               <h4 className="text-lg text-white font-medium mb-4">Resources</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Help Center</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Blog</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Tutorials</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Contact Us</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Careers</a></li>
               </ul>
             </div>
-            
+            */}
             <div>
               <h4 className="text-lg text-white font-medium mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">About Us</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Careers</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Privacy Policy</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-purple-400 transition">Terms of Service</a></li>
+                <li><a href="https://aismartsolution.ai" className="text-gray-400 hover:text-purple-400 transition">About Us</a></li>
+                <li><a href="https://aismartsolution.ai/#contact" className="text-gray-400 hover:text-purple-400 transition">Contact Us</a></li>
+                <li><Link href="/legal#privacy-policy" className="text-gray-400 hover:text-purple-400 transition">Privacy Policy</Link></li>
+                <li><Link href="/legal#terms-of-service" className="text-gray-400 hover:text-purple-400 transition">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
           
+          {/* Socials *
           <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 text-sm">© 2025 HeadshotAI. All rights reserved.</p>
             <div className="flex space-x-4 mt-4 md:mt-0">
@@ -70,6 +70,7 @@ const Footer = () => {
               </a>
             </div>
           </div>
+          */}
         </div>
       </footer>
     </>

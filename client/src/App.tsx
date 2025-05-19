@@ -16,6 +16,7 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import Login from "@/pages/Login";
 import Landing from "@/pages/Landing";
+import LegalPage from "@/pages/Legal";
 
 function Router() {
 
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/tokens" component={TokensPage} />
       <Route path="/payment/success" component={PaymentSuccess} />
       <Route path="/payment/cancel" component={PaymentCancel} />
+      <Route path="/legal" component={LegalPage} />
       <Route component={NotFound} />
     </Switch>
   );
