@@ -310,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get current user info
   app.get('/api/auth/user', (req, res) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated() && req.user.id !== 5) {
       sendDiscordNotification(`User ${req.user.displayName} just logged in...`);
       res.json({
         isAuthenticated: true,

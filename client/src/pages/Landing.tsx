@@ -12,7 +12,7 @@ import {
   Download, 
   ArrowRight, 
   Clock, 
-  DollarSign, 
+  Sword, 
   Zap, 
   Camera
 } from 'lucide-react';
@@ -535,24 +535,32 @@ const Landing = () => {
                   </div>
                 </div>
                 
-                <div className="slideshow-container h-128">
+                <div className="slideshow-container">
                   <div className="overflow-hidden" ref={emblaRef}>
                     <div className="flex h-full">
                       {demoPersons.map((person) => (
-                        <div key={person.id} className="flex-[0_0_100%] min-w-0 h-full">
-                          <div className="flex h-full">
+                        <div key={person.id} className="flex-[0_0_100%] min-w-0">
+                          <div className="flex h-[500px]">
                             <div className="w-1/2 h-full bg-gray-800 p-4 flex flex-col">
                               <p className="text-sm text-gray-400 mb-2">Original Photo</p>
-                              <div className="flex-grow flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
-                                <img src={person.original} alt={`${person.name} original`} className="max-h-full" />
+                              <div className="relative flex-1 bg-gray-900 rounded-lg overflow-hidden">
+                                <img 
+                                  src={person.original} 
+                                  alt={`${person.name} original`} 
+                                  className="absolute inset-0 w-full h-full object-contain p-2" 
+                                />
                               </div>
                             </div>
                             <div className="w-1/2 h-full bg-gray-800 p-4 flex flex-col">
                               <p className="text-sm text-gray-400 mb-2">
                                 <span className="capitalize">{selectedStyle}</span> Style
                               </p>
-                              <div className="flex-grow flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
-                                <img src={person.styles[selectedStyle]} alt={`${person.name} ${selectedStyle} style`} className="max-h-full" />
+                              <div className="relative flex-1 bg-gray-900 rounded-lg overflow-hidden">
+                                <img 
+                                  src={person.styles[selectedStyle]} 
+                                  alt={`${person.name} ${selectedStyle} style`} 
+                                  className="absolute inset-0 w-full h-full object-contain p-2" 
+                                />
                               </div>
                             </div>
                           </div>
@@ -584,90 +592,90 @@ const Landing = () => {
                 <div className="space-y-3">
                   <button 
                     onClick={() => handleStyleChange('professional')}
-                    className={`w-full p-4 rounded-lg flex items-center justify-between transition ${
+                    className={`w-full p-4 rounded-lg flex items-center transition ${
                       selectedStyle === 'professional' 
                         ? 'bg-gradient-to-r from-red-500/20 to-purple-600/20 border border-purple-500/50' 
                         : 'bg-gray-800/50 border border-purple-500/10'
                     }`}
                   >
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                    <div className="flex items-center flex-1">
+                      <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-3 ${
                         selectedStyle === 'professional' ? 'bg-purple-500' : 'bg-gray-700'
                       }`}>
                         <UserCheck size={20} className={selectedStyle === 'professional' ? 'text-white' : 'text-gray-400'} />
                       </div>
-                      <div>
+                      <div className="text-left">
                         <h4 className="font-medium">Professional</h4>
                         <p className="text-xs text-gray-400">Perfect for LinkedIn and corporate profiles</p>
                       </div>
                     </div>
-                    {selectedStyle === 'professional' && <CheckCircle size={20} className="text-purple-500" />}
+                    {selectedStyle === 'professional' && <CheckCircle size={20} className="text-purple-500 ml-4" />}
                   </button>
                   
                   <button 
                     onClick={() => handleStyleChange('creative')}
-                    className={`w-full p-4 rounded-lg flex items-center justify-between transition ${
+                    className={`w-full p-4 rounded-lg flex items-center transition ${
                       selectedStyle === 'creative' 
                         ? 'bg-gradient-to-r from-red-500/20 to-purple-600/20 border border-purple-500/50' 
                         : 'bg-gray-800/50 border border-purple-500/10'
                     }`}
                   >
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                    <div className="flex items-center flex-1">
+                      <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-3 ${
                         selectedStyle === 'creative' ? 'bg-purple-500' : 'bg-gray-700'
                       }`}>
                         <Sparkles size={20} className={selectedStyle === 'creative' ? 'text-white' : 'text-gray-400'} />
                       </div>
-                      <div>
+                      <div className="text-left">
                         <h4 className="font-medium">Creative</h4>
                         <p className="text-xs text-gray-400">For designers, artists and creative roles</p>
                       </div>
                     </div>
-                    {selectedStyle === 'creative' && <CheckCircle size={20} className="text-purple-500" />}
+                    {selectedStyle === 'creative' && <CheckCircle size={20} className="text-purple-500 ml-4" />}
                   </button>
                   
                   <button 
                     onClick={() => handleStyleChange('fantasy')}
-                    className={`w-full p-4 rounded-lg flex items-center justify-between transition ${
+                    className={`w-full p-4 rounded-lg flex items-center transition ${
                       selectedStyle === 'fantasy' 
                         ? 'bg-gradient-to-r from-red-500/20 to-purple-600/20 border border-purple-500/50' 
                         : 'bg-gray-800/50 border border-purple-500/10'
                     }`}
                   >
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                    <div className="flex items-center flex-1">
+                      <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-3 ${
                         selectedStyle === 'fantasy' ? 'bg-purple-500' : 'bg-gray-700'
                       }`}>
-                        <DollarSign size={20} className={selectedStyle === 'fantasy' ? 'text-white' : 'text-gray-400'} />
+                        <Sword size={20} className={selectedStyle === 'fantasy' ? 'text-white' : 'text-gray-400'} />
                       </div>
-                      <div>
+                      <div className="text-left">
                         <h4 className="font-medium">Fantasy</h4>
-                        <p className="text-xs text-gray-400">creative roles, imaginative portfolios, or anyone seeking a magical, otherworldly look</p>
+                        <p className="text-xs text-gray-400">For imaginative portfolios and magical, otherworldly looks</p>
                       </div>
                     </div>
-                    {selectedStyle === 'fantasy' && <CheckCircle size={20} className="text-purple-500" />}
+                    {selectedStyle === 'fantasy' && <CheckCircle size={20} className="text-purple-500 ml-4" />}
                   </button>
                   
                   <button 
                     onClick={() => handleStyleChange('casual')}
-                    className={`w-full p-4 rounded-lg flex items-center justify-between transition ${
+                    className={`w-full p-4 rounded-lg flex items-center transition ${
                       selectedStyle === 'casual' 
                         ? 'bg-gradient-to-r from-red-500/20 to-purple-600/20 border border-purple-500/50' 
                         : 'bg-gray-800/50 border border-purple-500/10'
                     }`}
                   >
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                    <div className="flex items-center flex-1">
+                      <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mr-3 ${
                         selectedStyle === 'casual' ? 'bg-purple-500' : 'bg-gray-700'
                       }`}>
                         <Clock size={20} className={selectedStyle === 'casual' ? 'text-white' : 'text-gray-400'} />
                       </div>
-                      <div>
+                      <div className="text-left">
                         <h4 className="font-medium">Casual</h4>
                         <p className="text-xs text-gray-400">Approachable, friendly style for social profiles</p>
                       </div>
                     </div>
-                    {selectedStyle === 'casual' && <CheckCircle size={20} className="text-purple-500" />}
+                    {selectedStyle === 'casual' && <CheckCircle size={20} className="text-purple-500 ml-4" />}
                   </button>
                 </div>
               </div>
