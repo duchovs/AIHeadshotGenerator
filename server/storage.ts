@@ -52,7 +52,7 @@ export interface IStorage {
   insertDeletedHeadshot(insertDeletedHeadshot: InsertDeletedHeadshot): Promise<DeletedHeadshot>;
   
   // Example Headshot methods
-  getExampleHeadshot(id: number): Promise<ExampleHeadshot | undefined>;
+  getExampleHeadshot(id: number, limit?: number): Promise<ExampleHeadshot | undefined>;
   createExampleHeadshot(headshot: Headshot): Promise<ExampleHeadshot>;
   deleteExampleHeadshot(id: number): Promise<boolean>;
 }
@@ -194,8 +194,13 @@ export class DatabaseStorage implements IStorage {
     return exampleHeadshot;
   }
 
-  async getExampleHeadshots(): Promise<ExampleHeadshot[]> {
-    return await db.select().from(exampleHeadshots);
+  async getExampleHeadshots(limit?: number): Promise<ExampleHeadshot[]> {
+    if (limit) {
+      return await db.select().from(exampleHeadshots).limit(limit);
+    }
+    else {
+      return await db.select().from(exampleHeadshots);
+    }
   }
 
   async createExampleHeadshot(headshot: Headshot): Promise<ExampleHeadshot> {

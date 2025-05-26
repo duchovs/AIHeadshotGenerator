@@ -1,5 +1,48 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Camera } from "lucide-react";
+import { useEffect } from 'react';
+
+interface ScrollLinkProps {
+  to: string;
+  className?: string;
+  children: React.ReactNode;
+}
+
+const ScrollLink = ({ to, className = '', children }: ScrollLinkProps) => {
+  const [location, navigate] = useLocation();
+  const isHashLink = to.startsWith('#');
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isHashLink) return;
+    
+    e.preventDefault();
+    const targetId = to.substring(1);
+    
+    if (location === '/') {
+      // If we're on the home page, just scroll
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth' });
+      }
+      // Update the URL without causing a navigation
+      window.history.pushState(null, '', `#${targetId}`);
+    } else {
+      // If we're on a different page, navigate to the home page with hash
+      navigate(`/#${targetId}`);
+      // The scroll will be handled by the useEffect when the component mounts
+    }
+  };
+
+  return isHashLink ? (
+    <a href={to} onClick={handleClick} className={className}>
+      {children}
+    </a>
+  ) : (
+    <Link href={to} className={className}>
+      {children}
+    </Link>
+  );
+};
 
 const Footer = () => {
   return (
@@ -18,10 +61,10 @@ const Footer = () => {
             <div>
               <h4 className="text-lg text-white font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="/#comparison" className="text-gray-400 hover:text-purple-400 transition">Features</a></li>
-                <li><a href="/#pricing" className="text-gray-400 hover:text-purple-400 transition">Pricing</a></li>
-                <li><a href="/#how-it-works" className="text-gray-400 hover:text-purple-400 transition">How It Works</a></li>
-                <li><a href="/#examples" className="text-gray-400 hover:text-purple-400 transition">Examples</a></li>
+                <li><ScrollLink to="#how-it-works" className="text-gray-400 hover:text-purple-400 transition">How It Works</ScrollLink></li>
+                <li><ScrollLink to="#examples" className="text-gray-400 hover:text-purple-400 transition">Examples</ScrollLink></li>
+                <li><ScrollLink to="#pricing" className="text-gray-400 hover:text-purple-400 transition">Pricing</ScrollLink></li>
+                <li><ScrollLink to="#comparison" className="text-gray-400 hover:text-purple-400 transition">Features</ScrollLink></li>
               </ul>
             </div>
             {/*}

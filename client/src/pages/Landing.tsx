@@ -85,7 +85,7 @@ const Landing = () => {
       name: "Gia", 
       original: HOST+'/original/gia.jpeg', 
       styles: {
-        professional: HOST+'/examples/headshot_30.png',
+        professional: HOST+'/examples/out-0.png',
         creative: HOST+'/examples/headshot_21.png',
         fantasy: HOST+'/examples/headshot_19.png',
         casual: HOST+'/examples/headshot_31.png'
@@ -606,7 +606,7 @@ const Landing = () => {
                       </div>
                       <div className="text-left">
                         <h4 className="font-medium">Professional</h4>
-                        <p className="text-xs text-gray-400">Perfect for LinkedIn and corporate profiles</p>
+                        <p className="text-xs text-gray-400">Perfect for LinkedIn, resumes, and corporate profiles</p>
                       </div>
                     </div>
                     {selectedStyle === 'professional' && <CheckCircle size={20} className="text-purple-500 ml-4" />}

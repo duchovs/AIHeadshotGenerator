@@ -177,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allowedOrigins = [
         'http://localhost:8081', // Common React dev port
         'http://10.10.100.65:8081', // Common Vite dev port
-        'http://*:8081',
+        'http://192.168.1.196:8081',
         // Add your frontend's deployed URL here for production
       ];
       if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -933,7 +933,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all example headshots
   app.get('/api/examples', cors(corsOptions), async (req: Request, res: Response) => {
     try {
-      const headshots = await storage.getExampleHeadshots();
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const headshots = await storage.getExampleHeadshots(limit);
       res.status(200).json(headshots);
     } catch (error) {
       console.error('Error fetching example headshots:', error);
