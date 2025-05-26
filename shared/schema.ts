@@ -145,6 +145,15 @@ export const generateFormSchema = z.object({
   gender: z.enum(['male', 'female']),
 });
 
+// Generic JSON type
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
+
 // Custom schemas for API requests
 export const trainModelSchema = z.object({
   userId: z.number().optional(),

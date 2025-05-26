@@ -27,7 +27,10 @@ import {
   insertModelSchema,
   insertHeadshotSchema,
   trainModelSchema,
-  generateHeadshotSchema
+  generateHeadshotSchema,
+  models, // Added import for models schema
+  type InsertDeletedHeadshot, // Added InsertDeletedHeadshot type
+  type Json // Added Json type
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -310,8 +313,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get current user info
   app.get('/api/auth/user', (req, res) => {
-    if (req.isAuthenticated() && req.user.id !== 5) {
-      sendDiscordNotification(`User ${req.user.displayName} just logged in...`);
+    if (req.isAuthenticated()) {
+      if (req.user.id !== 5) sendDiscordNotification(`User ${req.user.displayName} just logged in...`);
       res.json({
         isAuthenticated: true,
         user: req.user
@@ -998,8 +1001,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!headshot) {
         return res.status(404).json({ message: 'Headshot not found' });
       }
+      // Prepare data for insertDeletedHeadshot, ensuring type compatibility
+      const headshotToInsert: InsertDeletedHeadshot = {
+        userId: headshot.userId,
+        modelId: headshot.modelId,
+        style: headshot.style,
+        filePath: headshot.filePath,
+        imageUrl: headshot.imageUrl,
+        replicatePredictionId: headshot.replicatePredictionId,
+        prompt: headshot.prompt,
+        metadata: headshot.metadata as Json, // Cast metadata to Json type
+        favorite: headshot.favorite,
+      };
       // copy to new table first
-      await storage.insertDeletedHeadshot(headshot);
+      await storage.insertDeletedHeadshot(headshotToInsert);
       const deleted = await storage.deleteHeadshot(id);
       if (!deleted) {
         return res.status(404).json({ message: 'Headshot not found' });
