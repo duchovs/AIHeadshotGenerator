@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import ExamplesModal from "./ExamplesModal";
 
-const Hero = ({ modelId }: { modelId: number }) => {
+const Hero = ({ modelId }: { modelId: number | undefined }) => {
   const [showExamples, setShowExamples] = useState(false);
   return (
     <>

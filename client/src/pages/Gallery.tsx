@@ -10,13 +10,19 @@ import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
 import ExamplesGallery from '@/components/ExamplesGallery';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useHeadshots } from '@/hooks/use-headshots';
+import { useHeadshots, type ExampleHeadshotItem } from '@/hooks/use-headshots';
 import { EXAMPLE_HEADSHOTS } from '@/components/ExamplesModal';
 
 const Gallery = () => {
   const [headshots, setHeadshots] = useState<HeadshotItem[]>([]);
   const [favorites, setFavorites] = useState<HeadshotItem[]>([]);
-  const [examples, setExamples] = useState<HeadshotItem[]>(EXAMPLE_HEADSHOTS);
+  const [examples, setExamples] = useState<HeadshotItem[]>(
+    EXAMPLE_HEADSHOTS.map((ex: ExampleHeadshotItem) => ({
+      ...ex,
+      favorite: false, // Add default favorite
+      modelId: ex.headshotId, // Use headshotId as modelId
+    }))
+  );
   
   const { data, isLoading, error } = useHeadshots();
   

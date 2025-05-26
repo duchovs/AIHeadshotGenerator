@@ -40,6 +40,9 @@ router.get('/packages', (_req, res) => {
 router.post('/create-checkout-session', isAuthenticated, async (req: TokenRequest, res) => {
   console.log('Creating checkout session with price ID:', req.body.priceId);
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated for checkout session' });
+    }
     const { priceId } = req.body;
     
     if (!priceId) {

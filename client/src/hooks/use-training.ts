@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { generateFormSchema, GenerateFormValues } from '@shared/schema';
+import { type UseFormReturn } from 'react-hook-form';
 
 export interface TrainModelData {
   photoIds: number[];
@@ -46,7 +47,7 @@ export const useTrainModel = () => {
   });
 };
 
-export const useGenerateHeadshot = () => {
+export const useGenerateHeadshot = (form: UseFormReturn<GenerateFormValues>) => {
   const { toast } = useToast();
   
   return useMutation({

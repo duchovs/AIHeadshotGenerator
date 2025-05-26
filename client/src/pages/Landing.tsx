@@ -1,4 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, RefObject } from 'react';
+
+type StyleKey = 'professional' | 'creative' | 'fantasy' | 'casual';
+
+interface DemoPerson {
+  id: number;
+  name: string;
+  original: string;
+  styles: Record<StyleKey, string>;
+}
 import useEmblaCarousel from 'embla-carousel-react';
 import { useExampleHeadshots } from '@/hooks/use-headshots';
 import { LoginButton, AuthState } from '@/components/LoginButton';
@@ -18,17 +27,17 @@ import {
 } from 'lucide-react';
 
 const Landing = () => {
-  const [selectedStyle, setSelectedStyle] = useState('professional');
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [selectedStyle, setSelectedStyle] = useState<StyleKey>('professional');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [activeSlide, setActiveSlide] = useState(0);
   const [transforming, setTransforming] = useState(false);
   const [statsCount, setStatsCount] = useState({ users: 0, headshots: 0 });
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizStep, setQuizStep] = useState(0);
-  const [quizAnswers, setQuizAnswers] = useState([]);
-  const [quizResult, setQuizResult] = useState(null);
+  const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
+  const [quizResult, setQuizResult] = useState<string | null>(null);
   const [authState, setAuthState] = useState<AuthState | null>(null);
   
   const heroRef = useRef(null);
@@ -68,7 +77,7 @@ const Landing = () => {
   //const exampleHeadshots = useExampleHeadshots();
 
   // Mock demo data
-  const demoPersons = [
+  const demoPersons: DemoPerson[] = [
     { 
       id: 1, 
       name: "David", 
@@ -247,7 +256,7 @@ const Landing = () => {
     });
   }, []);
 
-  const handleStyleChange = (style) => {
+  const handleStyleChange = (style: StyleKey) => {
     setTransforming(true);
     setSelectedStyle(style);
     
@@ -257,17 +266,21 @@ const Landing = () => {
     }, 800);
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target.result);
+      reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+        if (loadEvent.target && typeof loadEvent.target.result === 'string') {
+          setUploadedImage(loadEvent.target.result);
+        } else {
+          setUploadedImage(null); // Fallback or error state
+        }
         
         // Simulate AI processing
         setTransforming(true);
         setTimeout(() => {
-          setPreviewImage("/api/placeholder/400/500");
+          setPreviewImage("/api/placeholder/400/500"); // This may still error if previewImage state is typed as only null
           setTransforming(false);
         }, 2000);
       };
@@ -282,7 +295,7 @@ const Landing = () => {
     setQuizResult(null);
   };
 
-  const handleQuizAnswer = (answer) => {
+  const handleQuizAnswer = (answer: string) => {
     const newAnswers = [...quizAnswers, answer];
     setQuizAnswers(newAnswers);
     
@@ -293,7 +306,7 @@ const Landing = () => {
       let recommendedStyle = 'professional';
       
       // Improved logic: score each style based on answers
-      const styleScores = {
+      const styleScores: Record<StyleKey, number> = {
         professional: 0,
         creative: 0,
         fantasy: 0,
@@ -315,14 +328,15 @@ const Landing = () => {
       newAnswers.forEach((answer, i) => {
         const idx = quizQuestions[i].options.indexOf(answer);
         if (idx !== -1) {
-          const style = answerToStyle[i][idx];
+          const style = answerToStyle[i][idx] as StyleKey;
           styleScores[style] += 1;
         }
       });
       // Pick the style with the highest score
       recommendedStyle = 'professional';
       let maxScore = 0;
-      for (const style in styleScores) {
+      for (const styleKey in styleScores) {
+        const style = styleKey as StyleKey;
         if (styleScores[style] > maxScore) {
           recommendedStyle = style;
           maxScore = styleScores[style];
@@ -333,8 +347,10 @@ const Landing = () => {
     }
   };
 
-  const scrollTo = (ref) => {
-    ref.current.scrollIntoView({ behavior: 'smooth' });
+  const scrollTo = (ref: RefObject<HTMLElement>) => {
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const closeQuiz = () => {
@@ -441,7 +457,7 @@ const Landing = () => {
               </div>
               
               <div className="flex justify-center mt-6 space-x-3">
-                {['professional', 'creative', 'fantasy', 'casual'].map((style) => (
+                {(['professional', 'creative', 'fantasy', 'casual'] as StyleKey[]).map((style) => (
                   <button
                     key={style}
                     onClick={() => handleStyleChange(style)}

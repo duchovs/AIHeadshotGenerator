@@ -24,3 +24,4 @@ connect generate similar on ViewHeadshotModal.tsx
         send prompt as style to generate similar
 add generate video
 fix check on # photos
+TRY this style now answer to quiz

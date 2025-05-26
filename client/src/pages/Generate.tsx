@@ -21,8 +21,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
-import { useModelStatus } from '@/hooks/use-training';
+import { useModelStatus, useGenerateHeadshot } from '@/hooks/use-training';
 import { generateFormSchema, GenerateFormValues } from '@shared/schema';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 import HeadshotGallery, { HeadshotItem } from '@/components/HeadshotGallery';
 
@@ -30,7 +32,7 @@ const Generate = () => {
   const { modelId } = useParams();
   const [, setLocation] = useLocation();
   const [selectedStyle, setSelectedStyle] = useState('Corporate');
-  const [selectedGender, setSelectedGender] = useState('male')
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('male')
   const { toast } = useToast();
   
   const modelIdInt = modelId ? parseInt(modelId) : undefined;
@@ -63,49 +65,15 @@ const Generate = () => {
   }, [modelIdInt, model, setLocation]);
 
   useEffect(() => {
-    form.setValue('modelId', modelIdInt);
+    if (modelIdInt !== undefined) {
+      form.setValue('modelId', modelIdInt);
+    }
     form.setValue('style', selectedStyle);
     form.setValue('prompt', '');
     form.setValue('gender', selectedGender);
   }, [form, modelIdInt, selectedStyle, selectedGender]);
 
-  const generateMutation = useMutation({
-    mutationFn: async (values: GenerateFormValues) => {
-      const response = await fetch('/api/headshots/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to generate headshot');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Headshot generated',
-        description: 'Your new headshot has been generated successfully.',
-      });
-      
-      // Invalidate headshots query to refresh the gallery
-      queryClient.invalidateQueries({ queryKey: ['/api/headshots'] });
-      
-      // Reset the form
-      form.setValue('prompt', '');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Generation failed',
-        description: error instanceof Error ? error.message : 'There was an error generating your headshot.',
-        variant: 'destructive',
-      });
-    }
-  });
+  const generateMutation = useGenerateHeadshot(form);
   // Fetch recent headshots for this model/user
   useEffect(() => {
     let ignore = false;

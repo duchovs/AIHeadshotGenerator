@@ -10,6 +10,7 @@ import { sendDiscordNotification } from './utils/discord';
 const sanitizeUser = (user: User): Express.User => ({
   id: user.id,
   username: user.username,
+  tokens: user.tokens ?? 0, // Add tokens, defaulting to 0 if null/undefined
   email: user.email || undefined,
   googleId: user.googleId || undefined,
   displayName: user.displayName || undefined,
@@ -58,20 +59,6 @@ passport.use(new GoogleStrategy({
     }
   }
 ));
-
-// Augment the Express session types
-declare global {
-  namespace Express {
-    interface User {
-      id: number;
-      username: string;
-      email?: string;
-      googleId?: string;
-      displayName?: string;
-      profilePicture?: string;
-    }
-  }
-}
 
 // Serialize user to session
 passport.serializeUser((user: Express.User, done) => {

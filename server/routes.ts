@@ -449,6 +449,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Photo not found' });
       }
 
+      if (!photo.path || typeof photo.userId !== 'number') {
+        return res.status(500).json({ message: 'Photo data is incomplete or invalid' });
+      }
       await serveSecureFile(req, res, photo.path, photo.userId);
     } catch (error) {
       console.error('Error serving photo:', error);
@@ -471,6 +474,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const file_path = headshot.filePath;
 
+      if (!file_path || typeof headshot.userId !== 'number') {
+        return res.status(500).json({ message: 'Headshot data is incomplete or invalid' });
+      }
       await serveSecureFile(req, res, file_path, headshot.userId);
     } catch (error) {
       console.error('Error serving headshot:', error);
@@ -506,7 +512,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Train a model using Replicate API
-  app.post('/api/models/train', isAuthenticated, checkTokenBalance(6), async (req: TokenRequest, res: Response) => {
+  // NOTE: For TokenRequest to work seamlessly, the global Express.User type should be augmented to include 'tokens: number'.
+  app.post('/api/models/train', isAuthenticated, checkTokenBalance(6), async (req: Request, res: Response) => {
+    const tokenReq = req as TokenRequest; // Cast to TokenRequest for internal use
     try {
       const { photoIds } = trainModelSchema.parse(req.body);
       
@@ -525,7 +533,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No valid photos provided' });
       }
 
-      const user = await storage.getUser(req.user?.id || 1);
+      if (!tokenReq.user) {
+        return res.status(401).json({ error: 'Unauthorized - user not found in token request' });
+      }
+      // Use tokenReq.user.id which is asserted to exist and be of the correct type by isAuthenticated and TokenRequest structure
+      const user = await storage.getUser(tokenReq.user.id);
       let new_model;
 
       // get model if already created
@@ -560,18 +572,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create model entry in the database
       const model = await storage.createModel({
-      userId: req.user?.id || 1,
+      userId: tokenReq.user.id, // tokenReq.user is checked by isAuthenticated and preceding 'if (!tokenReq.user)'
       replicateModelId: new_model?.name || '',
       status: 'training'
       });
       
-      if (!req.user?.id) {
+      if (!tokenReq.user) { // Check if tokenReq.user itself is defined
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
       // Deduct 6 tokens for model training
       await deductTokens(
-        req.user.id,
+        tokenReq.user.id, // Use id from tokenReq.user
         6,
         'train_model',
         model.id,
@@ -585,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "c6e78d2501e8088876e99ef21e4460d0dc121af7a4b786b9a4c2d75c620e300d",
         {
           // create a model on Replicate that will be the destination for the trained version.
-          destination: 'duchovs/' + model.replicateModelId,
+          destination: model.replicateModelId as `${string}/${string}`, // Asserting format for Replicate API
           webhook: `https://${req.get('host')}/api/webhooks/training-complete?modelId=${model.id}`,
           webhook_events_filter: ["completed", "logs"], // 'completed' webhook also contains: 'failed', 'canceled'
           input: {
@@ -595,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             batch_size: 1,
             resolution: "512,768,1024",
             autocaption: true,
-            input_images: `${req.protocol}://${req.get('host')}/api/photos/zip/${user?.id || ''}`,
+            input_images: `${req.protocol}://${req.get('host')}/api/photos/zip/${tokenReq.user.id}`, // user is checked, id is number
             trigger_word: "TOK",
             learning_rate: 0.0004,
             wandb_project: "flux_train_replicate",
@@ -677,7 +689,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all models for a user
   app.get('/api/models', cors(corsOptions), isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      if (!req.user || typeof req.user.id !== 'number') {
+        return res.status(401).json({ message: 'Unauthorized or user ID missing' });
+      }
+      const userId = req.user.id;
       const models = await storage.getModelsByUserId(userId);
       res.status(200).json(models);
     } catch (error) {
@@ -687,7 +702,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate a headshot using a trained model
-  app.post('/api/headshots/generate', isAuthenticated, isModelOwner, checkTokenBalance(1), async (req: TokenRequest, res: Response) => {
+  // NOTE: For TokenRequest to work seamlessly, the global Express.User type should be augmented to include 'tokens: number'.
+  app.post('/api/headshots/generate', isAuthenticated, isModelOwner, checkTokenBalance(1), async (req: Request, res: Response) => {
+    const tokenReq = req as TokenRequest; // Cast to TokenRequest for internal use
     try {
       const { modelId, style, prompt, gender } = generateHeadshotSchema.parse(req.body);
       
@@ -711,13 +728,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const modelIdentifier = `duchovs/${model.replicateModelId}:${model.replicateVersionId}` as const;
       console.log('Using model:', modelIdentifier);
-      if (!req.user?.id) {
+      if (!tokenReq.user) { // Check if tokenReq.user itself is defined
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
       // Deduct 1 token for headshot generation
+      if (!tokenReq.user) { // Explicit check before accessing tokenReq.user.id
+        return res.status(401).json({ error: 'Unauthorized - user session error before deducting tokens' });
+      }
       await deductTokens(
-        req.user.id,
+        tokenReq.user.id, // Use id from tokenReq.user
         1,
         'generate_headshot',
         undefined,
@@ -746,11 +766,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // imageUrl on replicate is temporary for an hour so we need to download the image
-      const imageUrl = String(output[0].url()).replace(/^"|"$/g, '');
+      const replicateOutput = output as any[]; // Assuming output is an array
+      if (!replicateOutput || replicateOutput.length === 0 || typeof replicateOutput[0]?.url !== 'function') {
+        console.error('Invalid output from Replicate:', output);
+        return res.status(500).json({ message: 'Failed to get image URL from generation service' });
+      }
+      const imageUrl = String(replicateOutput[0].url()).replace(/^"|"$/g, '');
       console.log(imageUrl)
       // Store the generated headshot
+      if (!tokenReq.user) { // Explicit check before accessing tokenReq.user.id
+        return res.status(401).json({ error: 'Unauthorized - user session error before creating headshot' });
+      }
       const headshot = await storage.createHeadshot({
-        userId: req.user?.id || 2,
+        userId: tokenReq.user.id, // tokenReq.user is checked
         modelId,
         style,
         imageUrl,
@@ -761,7 +789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Save the generated image in user's directory
-      const userDir = path.join(generatedDir, req.user ? req.user.id.toString() : 'anonymous');
+      const userDir = path.join(generatedDir, tokenReq.user ? tokenReq.user.id.toString() : 'anonymous');
       fs.mkdirSync(userDir, { recursive: true });
       const imgFilename = `headshot_${headshot.id || Date.now()}.png`;
       const imgPath = path.join(userDir, imgFilename);
