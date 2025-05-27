@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import stripeRoutes from './routes/stripe';
 import { db } from './db';
 import { sendModelCompletionEmail } from './resend';
@@ -8,7 +8,8 @@ import { fileURLToPath } from 'url';
 import AdmZip from 'adm-zip';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { deductTokens, checkTokenBalance } from "./middleware/tokenMiddleware";
+import { env } from './env'; // For STRIPE_PRICE_IDs and other env vars
+import { deductTokens, checkTokenBalance, addTokens } from "./middleware/tokenMiddleware";
 import type { TokenRequest } from "./middleware/tokenMiddleware";
 import path from "path";
 import { getStylePrompt } from './prompts';
@@ -21,7 +22,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import fs from "fs";
 import multer from "multer";
-import passport from "./auth";
+import passport, { handleGoogleMobileAuth, sanitizeUser } from "./auth";
+import { generateAccessToken, verifyRefreshToken } from './utils/jwt';
+import jwt from 'jsonwebtoken';
 import {
   insertUploadedPhotoSchema,
   insertModelSchema,
@@ -65,12 +68,52 @@ const upload = multer({
   }
 });
 
-// Helper middleware to check if user is authenticated
-const isAuthenticated = (req: Request, res: Response, next: any) => {
-  if (req.isAuthenticated()) {
+// Helper middleware to check if user is authenticated (supports JWT and session)
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate('jwt', { session: false }, (err: any, jwtUser: Express.User | false, info: any) => {
+    if (err) {
+      console.error('JWT Authentication Strategy Error:', err);
+      return res.status(500).json({ message: 'Authentication error.' });
+    }
+
+    if (jwtUser) {
+      req.user = jwtUser;
+      return next();
+    }
+
+    // If JWT authentication failed, try session-based authentication
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      return next();
+    }
+
+    // If both JWT and session authentication failed
+    let finalMessage = 'Unauthorized. No valid session or token provided.';
+    // Use specific JWT error if a token was attempted but failed (e.g., expired, invalid signature)
+    // Exclude 'No auth token' because that means no JWT was present, and session also failed.
+    if (info && info.message && info.message !== 'No auth token') {
+        finalMessage = `Unauthorized: ${info.message}`;
+    }
+    return res.status(401).json({ error: finalMessage });
+
+  })(req, res, next);
+};
+
+// Helper middleware to check if user is authenticated via JWT
+export const authenticateJWT = (req: Request, res: Response, next: any) => {
+  passport.authenticate('jwt', { session: false }, (err: any, user: Express.User | false, info: any) => {
+    if (err) {
+      console.error('JWT Authentication Error:', err);
+      return res.status(500).json({ message: 'Internal server error during authentication.' });
+    }
+    if (!user) {
+      // info might contain details like 'No auth token' or 'jwt expired'
+      const message = info?.message || 'Unauthorized. Invalid or missing token.';
+      console.warn('JWT Authentication Failed:', message, info);
+      return res.status(401).json({ message });
+    }
+    req.user = user; // Forward the user to the next middleware/handler
     return next();
-  }
-  res.status(401).json({ error: 'Unauthorized' });
+  })(req, res, next);
 };
 
 // Middleware to check if user owns the model
@@ -300,6 +343,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe routes
   app.use('/api/stripe', stripeRoutes);
   // Auth routes
+
+  // Mobile Google Sign-In (JWT based)
+  app.post('/api/auth/google/mobile', async (req: Request, res: Response) => {
+    const { googleIdToken } = req.body;
+
+    if (!googleIdToken || typeof googleIdToken !== 'string') {
+      return res.status(400).json({ message: 'Google ID token is required.' });
+    }
+
+    try {
+      const authResult = await handleGoogleMobileAuth(googleIdToken);
+      if (authResult) {
+        res.json({
+          message: 'Authentication successful.',
+          accessToken: authResult.accessToken,
+          refreshToken: authResult.refreshToken,
+          user: authResult.user,
+          expiresIn: authResult.expiresIn, // Add expiresIn here
+        });
+      } else {
+        res.status(401).json({ message: 'Authentication failed. Invalid Google ID token or user processing error.' });
+      }
+    } catch (error) {
+      console.error('Error in /api/auth/google/mobile:', error);
+      res.status(500).json({ message: 'Internal server error during mobile authentication.' });
+    }
+  });
+
+  // JWT Refresh Token Endpoint
+  app.post('/api/auth/refresh', async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken || typeof refreshToken !== 'string') {
+      return res.status(400).json({ message: 'Refresh token is required.' });
+    }
+
+    try {
+      const decoded = verifyRefreshToken(refreshToken);
+      if (!decoded || !decoded.id) {
+        return res.status(401).json({ message: 'Invalid or expired refresh token.' });
+      }
+
+      // Optional: Check if user still exists and is active in DB
+      const user = await storage.getUser(decoded.id);
+      if (!user) {
+        return res.status(401).json({ message: 'User not found for refresh token.' });
+      }
+
+      const sanitizedUser = sanitizeUser(user); // We need Express.User type for generateAccessToken
+      const newAccessToken = generateAccessToken(sanitizedUser);
+
+      res.json({
+        accessToken: newAccessToken,
+        message: 'Access token refreshed successfully.',
+      });
+    } catch (error) {
+      console.error('Error in /api/auth/refresh:', error);
+      // Differentiate between verification errors and other errors if needed
+      if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+        return res.status(401).json({ message: 'Invalid or expired refresh token.' });
+      }
+      res.status(500).json({ message: 'Internal server error during token refresh.' });
+    }
+  });
+
   app.get('/auth/google',
     passport.authenticate('google', { scope: ['profile', 'email'] })
   );
@@ -420,6 +528,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete an uploaded photo
+  // Mobile In-App Purchase Endpoint for Tokens
+  app.post('/api/tokens/purchase/mobile', authenticateJWT, async (req: Request, res: Response) => {
+    // Ensure req.user is populated by authenticateJWT
+    if (!req.user || typeof req.user.id !== 'number') {
+      return res.status(401).json({ message: 'Unauthorized. User not found in token.' });
+    }
+
+    const { paymentToken, packageId, provider } = req.body;
+
+    // Basic validation
+    if (!paymentToken || !packageId || !provider) {
+      return res.status(400).json({ message: 'Missing paymentToken, packageId, or provider.' });
+    }
+
+    // TODO: Implement actual payment verification with Apple/Google Pay SDKs/APIs
+    // This is a placeholder for payment verification logic.
+    // In a real implementation, you would send the paymentToken to Apple/Google for verification.
+    // For now, we'll assume payment is successful if a token is provided.
+    console.log(`Received mobile purchase request: User ID ${req.user.id}, Package ID ${packageId}, Provider ${provider}`);
+    const MOCK_PAYMENT_VERIFIED = true; // Placeholder
+
+    if (!MOCK_PAYMENT_VERIFIED) {
+      return res.status(402).json({ message: 'Payment verification failed.' });
+    }
+
+    // Determine tokens to add based on packageId
+    // This should align with your STRIPE_PRICE_CONFIGS or a new mobile package config
+    let tokensToAdd = 0;
+    switch (packageId) {
+      case env.STRIPE_PRICE_10_TOKENS: // Assuming packageId might be the Stripe Price ID or a mobile-specific one
+        tokensToAdd = 10;
+        break;
+      case env.STRIPE_PRICE_30_TOKENS:
+        tokensToAdd = 30;
+        break;
+      case env.STRIPE_PRICE_70_TOKENS:
+        tokensToAdd = 70;
+        break;
+      // Add more cases for mobile-specific packages if they differ
+      default:
+        return res.status(400).json({ message: 'Invalid packageId.' });
+    }
+
+    try {
+      await addTokens(req.user.id, tokensToAdd, 'mobile_purchase', packageId);
+      const updatedUser = await storage.getUser(req.user.id);
+      res.json({
+        message: 'Tokens purchased successfully.',
+        tokensAdded: tokensToAdd,
+        newBalance: updatedUser?.tokens ?? req.user.tokens, // Use updated balance if available
+        user: sanitizeUser(updatedUser!) // Send back updated user
+      });
+    } catch (error) {
+      console.error('Error adding tokens after mobile purchase:', error);
+      res.status(500).json({ message: 'Failed to update token balance after purchase.' });
+    }
+  });
+
   // Secure file serving endpoints
   const serveSecureFile = async (req: Request, res: Response, filePath: string, ownerId: number) => {
     // Check if user owns the file

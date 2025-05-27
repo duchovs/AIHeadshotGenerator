@@ -970,9 +970,11 @@ const Landing = () => {
                   </div>
                   
                   <div className="space-y-3">
+                  <a href='/upload'>
                     <button className="w-full py-3 rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium transition">
                       Try This Style Now
                     </button>
+                    </a>
                     <button onClick={closeQuiz} className="w-full py-3 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 transition">
                       Close Quiz
                     </button>

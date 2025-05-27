@@ -28,6 +28,15 @@ const envSchema = z.object({
   
   // Discord
   DISCORD_WEBHOOK_URL: z.string().url(),
+
+  // Google Auth
+  GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(), // Already used by passport-google-oauth20, ensure it's here
+  GOOGLE_CALLBACK_URL: z.string(), // Already used by passport-google-oauth20, ensure it's here
+
+  // JWT Secrets
+  JWT_SECRET: z.string(),
+  REFRESH_TOKEN_SECRET: z.string(),
 });
 
 export const env = envSchema.parse(process.env);
