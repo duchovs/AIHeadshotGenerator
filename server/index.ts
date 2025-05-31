@@ -136,11 +136,9 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       if (logLine.length > 185) {
         logLine = logLine.slice(0, 184) + "…";
       }
-
       log(logLine);
     }
   });

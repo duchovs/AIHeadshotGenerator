@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import stripeRoutes from './routes/stripe';
+import { isAuthenticated } from './middleware/authMiddleware';
 import { db } from './db';
 import { sendModelCompletionEmail } from './resend';
 import { eq } from 'drizzle-orm';
@@ -23,7 +24,7 @@ const __dirname = path.dirname(__filename);
 import fs from "fs";
 import multer from "multer";
 import passport, { handleGoogleMobileAuth, sanitizeUser } from "./auth";
-import { generateAccessToken, verifyRefreshToken } from './utils/jwt';
+import { generateAccessToken, verifyRefreshToken, JWT_EXPIRATION } from './utils/jwt';
 import jwt from 'jsonwebtoken';
 import {
   insertUploadedPhotoSchema,
@@ -68,35 +69,6 @@ const upload = multer({
   }
 });
 
-// Helper middleware to check if user is authenticated (supports JWT and session)
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('jwt', { session: false }, (err: any, jwtUser: Express.User | false, info: any) => {
-    if (err) {
-      console.error('JWT Authentication Strategy Error:', err);
-      return res.status(500).json({ message: 'Authentication error.' });
-    }
-
-    if (jwtUser) {
-      req.user = jwtUser;
-      return next();
-    }
-
-    // If JWT authentication failed, try session-based authentication
-    if (req.isAuthenticated && req.isAuthenticated()) {
-      return next();
-    }
-
-    // If both JWT and session authentication failed
-    let finalMessage = 'Unauthorized. No valid session or token provided.';
-    // Use specific JWT error if a token was attempted but failed (e.g., expired, invalid signature)
-    // Exclude 'No auth token' because that means no JWT was present, and session also failed.
-    if (info && info.message && info.message !== 'No auth token') {
-        finalMessage = `Unauthorized: ${info.message}`;
-    }
-    return res.status(401).json({ error: finalMessage });
-
-  })(req, res, next);
-};
 
 // Helper middleware to check if user is authenticated via JWT
 export const authenticateJWT = (req: Request, res: Response, next: any) => {
@@ -397,6 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         accessToken: newAccessToken,
         message: 'Access token refreshed successfully.',
+        expiresIn: JWT_EXPIRATION,
       });
     } catch (error) {
       console.error('Error in /api/auth/refresh:', error);
@@ -763,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "c6e78d2501e8088876e99ef21e4460d0dc121af7a4b786b9a4c2d75c620e300d",
         {
           // create a model on Replicate that will be the destination for the trained version.
-          destination: model.replicateModelId as `${string}/${string}`, // Asserting format for Replicate API
+          destination: 'duchovs/' + model.replicateModelId as `${string}/${string}`, // Asserting format for Replicate API
           webhook: `https://${req.get('host')}/api/webhooks/training-complete?modelId=${model.id}`,
           webhook_events_filter: ["completed", "logs"], // 'completed' webhook also contains: 'failed', 'canceled'
           input: {
@@ -794,6 +767,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       void pollTrainingStatus(training.id, model.id).then(response => {
         if (response.status === 'failed') {
           console.error('Training failed:', response.error);
+          
+          // Refund tokens if user exists and tokens were deducted
+          if (tokenReq.user) {
+            try {
+              void addTokens(
+                tokenReq.user.id,
+                6, // Refund the 6 tokens that were deducted
+                'training_failed_refund',
+                undefined,
+                { error: response.error || 'Unknown error occurred during training' }
+              );
+              console.log(`Refunded 6 tokens to user ${tokenReq.user.id} due to training failure`);
+            } catch (refundError) {
+              console.error('Failed to refund tokens:', refundError);
+              // Continue with error response even if refund fails
+            }
+          }
+          
           // Update the model with the failure status and error
           void storage.updateModel(model.id, {
             status: 'failed',
@@ -812,10 +803,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error training model:', error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: 'Invalid training data', errors: error.errors });
+      
+      // Refund tokens if user exists and tokens were deducted
+      if (tokenReq.user) {
+        try {
+          await addTokens(
+            tokenReq.user.id,
+            6, // Refund the 6 tokens that were deducted
+            'training_failed_refund',
+            undefined,
+            { error: error instanceof Error ? error.message : String(error) }
+          );
+          console.log(`Refunded 6 tokens to user ${tokenReq.user.id} due to training failure`);
+        } catch (refundError) {
+          console.error('Failed to refund tokens:', refundError);
+          // Continue with error response even if refund fails
+        }
       }
-      res.status(500).json({ message: 'Failed to start model training' });
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: 'Invalid training data', 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: 'Failed to start model training',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
     }
   });
 
@@ -951,7 +967,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         replicatePredictionId: `prediction_${Date.now()}`,
         prompt: stylePrompt,
         metadata: {},
-        favorite: false
+        favorite: false,
+        gender,
       });
 
       // Save the generated image in user's directory

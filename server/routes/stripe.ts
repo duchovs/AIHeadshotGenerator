@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { isAuthenticated } from '../middleware/authMiddleware';
 import type { TokenRequest } from '../middleware/tokenMiddleware';
 import { stripe, STRIPE_PRICE_CONFIGS, getTokensForPriceId, constructWebhookEvent } from '../stripe';
 import { db } from '../db';
@@ -16,13 +17,7 @@ import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
-// Middleware to ensure user is authenticated
-const isAuthenticated = (req: any, res: any, next: any) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ error: 'Not authenticated' });
-};
+
 
 // Get available token packages
 router.get('/packages', (_req, res) => {

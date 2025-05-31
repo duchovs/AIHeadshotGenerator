@@ -12,8 +12,8 @@ const JWT_SECRET = env.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = env.REFRESH_TOKEN_SECRET;
 
 // Consider making these configurable via env vars as well
-export const JWT_EXPIRATION = '1h'; // Access token expiration (e.g., 1 hour)
-const REFRESH_TOKEN_EXPIRATION = '7d'; // Refresh token expiration (e.g., 7 days)
+export const JWT_EXPIRATION = 3600; // 1 hour in seconds // Access token expiration (e.g., 1 hour)
+const REFRESH_TOKEN_EXPIRATION = 604800; // 7 days in seconds // Refresh token expiration (e.g., 7 days)
 
 export interface JwtPayload {
   id: number;

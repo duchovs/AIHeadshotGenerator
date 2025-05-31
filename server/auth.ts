@@ -8,7 +8,6 @@ import { sendDiscordNotification } from './utils/discord';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from 'passport-jwt';
 import { generateAccessToken, generateRefreshToken, JwtPayload, JWT_EXPIRATION } from './utils/jwt';
-import ms from 'ms';
 import { env } from './env'; // For GOOGLE_CLIENT_ID
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
@@ -96,7 +95,8 @@ passport.use(new JwtStrategy(jwtOptions, async (payload: JwtPayload, done) => {
     const user = await storage.getUser(payload.id);
 
     if (user) {
-      return done(null, sanitizeUser(user)); // Attach sanitized user to req.user
+      const sanitized = sanitizeUser(user);
+      return done(null, sanitized); // Attach sanitized user to req.user
     }
     return done(null, false); // User not found
   } catch (error) {
@@ -111,7 +111,7 @@ export const handleGoogleMobileAuth = async (googleIdToken: string): Promise<{ a
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken: googleIdToken,
-      audience: env.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+      audience: env.IOS_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
     });
     const payload: TokenPayload | undefined = ticket.getPayload();
 
@@ -158,7 +158,7 @@ export const handleGoogleMobileAuth = async (googleIdToken: string): Promise<{ a
       accessToken,
       refreshToken,
       user: sanitizedAppUser,
-      expiresIn: ms(JWT_EXPIRATION) / 1000, // Convert to seconds
+      expiresIn: JWT_EXPIRATION,
     };
 
   } catch (error) {

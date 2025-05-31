@@ -37,6 +37,12 @@ const envSchema = z.object({
   // JWT Secrets
   JWT_SECRET: z.string(),
   REFRESH_TOKEN_SECRET: z.string(),
+
+  // Base path
+  BASE_PATH: z.string(),
+
+  // iOS Client ID
+  IOS_CLIENT_ID: z.string(),
 });
 
 export const env = envSchema.parse(process.env);

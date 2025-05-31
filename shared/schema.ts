@@ -49,6 +49,7 @@ export const headshots = pgTable("headshots", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   favorite: boolean("favorite").default(false),
+  gender: text("gender"),
 });
 
 export const exampleHeadshots = pgTable("example_headshots", {
@@ -58,6 +59,7 @@ export const exampleHeadshots = pgTable("example_headshots", {
   prompt: text("prompt"),
   filePath: text("file_path").notNull(),
   imageUrl: text("image_url").notNull(),
+  gender: text("gender"),
 });
 
 // Table to store deleted headshots (same schema as headshots)
@@ -162,7 +164,7 @@ export const trainModelSchema = z.object({
 
 export const generateHeadshotSchema = z.object({
   modelId: z.number(),
-  style: z.string(),
+  style: z.enum(['Corporate','Casual','Artistic','Outdoor','Fantasy']),
   prompt: z.string().optional(),
   gender: z.enum(['male','female']),
 });

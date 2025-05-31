@@ -1,6 +1,7 @@
 import { storage } from "../storage";
 import fs from "fs";
 import readline from "readline";
+import { env } from "../env";
 
 export const addExampleHeadshots = async (id: number) => {
   const headshot = await storage.getHeadshot(id);
@@ -11,10 +12,10 @@ export const addExampleHeadshots = async (id: number) => {
   const filePath = headshot.filePath!;
   const fileName = filePath.split("/").pop()!;
   const file = fs.readFileSync(filePath);
-  fs.writeFileSync(`/home/duchovs/code/AIHeadshotgenerator/client/public/examples/${fileName}`, file);
+  fs.writeFileSync(`${env.BASE_PATH}/client/public/examples/${fileName}`, file);
   return storage.createExampleHeadshot({
     ...headshot,
-    filePath: `/home/duchovs/code/AIHeadshotgenerator/client/public/examples/${fileName}`,
+    filePath: `/client/public/examples/${fileName}`,
     imageUrl: `/examples/${fileName}`,
   });
 };

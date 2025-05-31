@@ -1,0 +1,1050 @@
+{
+  "info": {
+    "_postman_id": "pid-1721258400000-xxxxxxxx",
+    "name": "AI Headshot Generator API",
+    "description": "API for AI Headshot Generator. \n**Setup:**\n1. Create Postman environment.\n2. Add `baseUrl` (e.g., `http://localhost:5000`).\n3. Add `jwt_token` (after login).\n4. Add `admin_api_key` (for admin routes).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400000-xxxxxyyy",
+          "name": "Google Mobile Token Exchange",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google/mobile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google",
+                "mobile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"googleIdToken\": \"YOUR_GOOGLE_ID_TOKEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Exchange Google ID token for app JWT."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400001-xxxxxyyz",
+          "name": "Refresh JWT Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Refresh JWT access token."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400002-xxxxxyza",
+          "name": "Google Login (Browser Flow)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Initiates Google OAuth2 login (browser)."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400003-xxxxxyzb",
+          "name": "Google Callback (Browser Flow)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/google/callback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google",
+                "callback"
+              ]
+            },
+            "description": "Google OAuth2 callback (browser)."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400004-xxxxxyzc",
+          "name": "Get Authenticated User Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "user"
+              ]
+            },
+            "description": "Get current user if authenticated (JWT or session)."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400005-xxxxxyzd",
+          "name": "Logout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout current user (session or JWT)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication Endpoints",
+      "_postman_id": "fid-1721258400000-folderxx"
+    },
+    {
+      "name": "User & Tokens",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400006-xxxxxyze",
+          "name": "Mobile In-App Purchase for Tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tokens/purchase/mobile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tokens",
+                "purchase",
+                "mobile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentToken\": \"TOKEN_FROM_APP_STORE\",\n  \"packageId\": \"YOUR_PACKAGE_ID\",\n  \"provider\": \"apple/google\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Record mobile IAP and add tokens."
+          },
+          "response": []
+        }
+      ],
+      "description": "User & Tokens Endpoints",
+      "_postman_id": "fid-1721258400001-folderxy"
+    },
+    {
+      "name": "Photos & Uploads",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400007-xxxxxyzf",
+          "name": "Upload Photos for Training",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploads"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "description": "Image files (max 20, 5MB each)"
+                }
+              ]
+            },
+            "description": "Upload 1-20 photos for model training."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400008-xxxxxyzg",
+          "name": "List Uploaded Photos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploads"
+              ]
+            },
+            "description": "Get list of user's uploaded photos."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400009-xxxxxyzh",
+          "name": "Get Uploaded Photo Preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploads/:id/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploads",
+                ":id",
+                "preview"
+              ]
+            },
+            "description": "Preview a specific uploaded photo. Replace :id with photo ID."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400010-xxxxxyzi",
+          "name": "Delete Uploaded Photo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploads/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploads",
+                ":id"
+              ]
+            },
+            "description": "Delete a specific uploaded photo. Replace :id with photo ID."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400011-xxxxxyzj",
+          "name": "Download User Photos (ZIP)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/photos/zip/:userId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "photos",
+                "zip",
+                ":userId"
+              ]
+            },
+            "description": "Download all photos for a user as a ZIP. Replace :userId. Auth: User must match :userId or be admin."
+          },
+          "response": []
+        }
+      ],
+      "description": "Photos & Uploads Endpoints",
+      "_postman_id": "fid-1721258400002-folderxz"
+    },
+    {
+      "name": "Models",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400012-xxxxxyzk",
+          "name": "Train New Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/models/train",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "models",
+                "train"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Awesome Model\",\n  \"photoIds\": [\n    1,\n    2,\n    3\n  ],\n  \"modelType\": \"man\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Train a new model using uploaded photos. Costs 6 tokens."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400013-xxxxxyyl",
+          "name": "List User Models",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/models",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "models"
+              ]
+            },
+            "description": "Get list of models belonging to the user."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400014-xxxxxyym",
+          "name": "Get Model Details & Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/models/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "models",
+                ":id"
+              ]
+            },
+            "description": "Get details and training status of a specific model. Replace :id."
+          },
+          "response": []
+        }
+      ],
+      "description": "Models Endpoints",
+      "_postman_id": "fid-1721258400003-folderya"
+    },
+    {
+      "name": "Headshots",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400015-xxxxxyyn",
+          "name": "Generate Headshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/headshots/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "headshots",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modelId\": 1,\n  \"style\": \"professional_office\",\n  \"gender\": \"man\",\n  \"prompt\": \"Optional custom additions\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Generate headshots from a trained model. Costs 1 token."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400016-xxxxxyyo",
+          "name": "List Generated Headshots",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/headshots?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "headshots"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "(Optional) Max items"
+                }
+              ]
+            },
+            "description": "List headshots generated by the user."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400017-xxxxxyyp",
+          "name": "Get Headshot Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/headshots/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "headshots",
+                ":id"
+              ]
+            },
+            "description": "Get details of a specific headshot. Replace :id."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400018-xxxxxyyq",
+          "name": "Get Headshot Image File",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/headshots/:id/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "headshots",
+                ":id",
+                "image"
+              ]
+            },
+            "description": "Serve the image file for a specific headshot. Replace :id."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400019-xxxxxyyr",
+          "name": "Toggle Favorite Headshot",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/headshots/:id/favorite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "headshots",
+                ":id",
+                "favorite"
+              ]
+            },
+            "description": "Toggle the favorite status of a headshot. Replace :id."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400020-xxxxxyys",
+          "name": "Delete Headshot",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/headshots/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "headshots",
+                ":id"
+              ]
+            },
+            "description": "Delete a specific headshot. Replace :id."
+          },
+          "response": []
+        }
+      ],
+      "description": "Headshots Endpoints",
+      "_postman_id": "fid-1721258400004-folderyb"
+    },
+    {
+      "name": "Stripe Payments",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400021-xxxxxyyt",
+          "name": "Get Token Packages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stripe/packages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stripe",
+                "packages"
+              ]
+            },
+            "description": "List available token packages for purchase via Stripe."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400022-xxxxxyyu",
+          "name": "Create Stripe Checkout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stripe/create-checkout-session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stripe",
+                "create-checkout-session"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceId\": \"YOUR_STRIPE_PRICE_ID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a Stripe Checkout session to buy tokens."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400023-xxxxxyyv",
+          "name": "Get User Token Balance (Stripe)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stripe/balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stripe",
+                "balance"
+              ]
+            },
+            "description": "Get user's token balance (Stripe context)."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400024-xxxxxyyw",
+          "name": "Stripe Webhook Handler",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Stripe-Signature",
+                "value": "whsec_YOUR_STRIPE_WEBHOOK_SIGNATURE"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stripe/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stripe",
+                "webhook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_example\",\n  \"type\": \"checkout.session.completed\",\n  \"data\": {\n    \"object\": {}\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Handles incoming Stripe webhooks (e.g., payment success)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Stripe Payments Endpoints",
+      "_postman_id": "fid-1721258400005-folderyc"
+    },
+    {
+      "name": "Webhooks (Internal Callbacks)",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400025-xxxxxyyx",
+          "name": "Replicate Training Complete Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/training-complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "training-complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"replicate_training_id\",\n  \"status\": \"succeeded\",\n  \"version\": \"version_id\",\n  \"output\": { },\n  \"webhook\": \"...modelId=X...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Callback from Replicate with training status updates."
+          },
+          "response": []
+        }
+      ],
+      "description": "Webhooks (Internal Callbacks) Endpoints",
+      "_postman_id": "fid-1721258400006-folderyd"
+    },
+    {
+      "name": "Public Examples",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400026-xxxxxyyy",
+          "name": "List Example Headshots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/examples?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "examples"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "(Optional) Max items"
+                }
+              ]
+            },
+            "description": "List publicly available example headshots."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400027-xxxxxyyz",
+          "name": "Get Example Headshot Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/examples/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "examples",
+                ":id"
+              ]
+            },
+            "description": "Get details of a specific example headshot. Replace :id."
+          },
+          "response": []
+        }
+      ],
+      "description": "Public Examples Endpoints",
+      "_postman_id": "fid-1721258400007-folderye"
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400028-xxxxxyzaa",
+          "name": "Admin: Generate Headshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/headshots/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "headshots",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modelId\": 1,\n  \"style\": \"cinematic_portrait\",\n  \"gender\": \"woman\",\n  \"prompt\": \"Admin test generation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Admin only: Generate headshots (no token cost)."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400029-xxxxxyzab",
+          "name": "Admin: List All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Admin only: List all users in the system."
+          },
+          "response": []
+        },
+        {
+          "_postman_id": "rid-1721258400030-xxxxxyzac",
+          "name": "Admin: Add Tokens to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/:userId/tokens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                ":userId",
+                "tokens"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokens\": 100,\n  \"reason\": \"Manual grant by admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Admin only: Add tokens to a specific user's account. Replace :userId."
+          },
+          "response": []
+        }
+      ],
+      "description": "Admin Endpoints",
+      "_postman_id": "fid-1721258400008-folderyf"
+    },
+    {
+      "name": "Utilities",
+      "item": [
+        {
+          "_postman_id": "rid-1721258400031-xxxxxyzad",
+          "name": "CORS Test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cors-test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cors-test"
+              ]
+            },
+            "description": "A simple endpoint to test CORS configuration."
+          },
+          "response": []
+        }
+      ],
+      "description": "Utilities Endpoints",
+      "_postman_id": "fid-1721258400009-folderyg"
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string",
+      "description": "Server base URL"
+    }
+  ]
+}

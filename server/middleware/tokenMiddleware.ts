@@ -53,19 +53,22 @@ export async function deductTokens(
       where: eq(users.id, userId),
       columns: { tokens: true }
     });
-
-    await tx
-      .update(users)
-      .set({ tokens: (currentUser?.tokens ?? 0) - tokenAmount })
-      .where(eq(users.id, userId));
-
-
+    if (!currentUser) {
+      console.error(`[deductTokens] User not found in 'users' table with ID: ${userId} (type: ${typeof userId}). Token balance on 'users' table will NOT be updated.`);
+      // Transaction will still proceed to record in tokenTransactions as per original logic
+    } else {
+      const newTokens = (currentUser.tokens ?? 0) - tokenAmount;
+      await tx
+        .update(users)
+        .set({ tokens: newTokens })
+        .where(eq(users.id, userId));
+    }
     // Record the transaction
     await tx.insert(tokenTransactions).values({
       userId,
       type,
       referenceId,
-      tokens: -tokenAmount,
+      tokens: -tokenAmount, // Storing deduction as negative
       metadata
     });
   });
