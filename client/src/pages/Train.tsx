@@ -22,6 +22,7 @@ const Train = () => {
     status: 'training' | 'completed' | 'failed' | 'canceled';
     message?: string;
     error?: string;
+    progress?: number;
   }
 
   const { data: model, isLoading } = useQuery({
