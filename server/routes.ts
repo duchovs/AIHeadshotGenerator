@@ -3,7 +3,7 @@ import stripeRoutes from './routes/stripe';
 import { isAuthenticated } from './middleware/authMiddleware';
 import { db } from './db';
 import { sendModelCompletionEmail } from './resend';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { uploadedPhotos } from '@shared/schema';
 import { fileURLToPath } from 'url';
 import AdmZip from 'adm-zip';
@@ -33,6 +33,7 @@ import {
   trainModelSchema,
   generateHeadshotSchema,
   models, // Added import for models schema
+  tokenTransactions, // Import for tokenTransactions schema
   type InsertDeletedHeadshot, // Added InsertDeletedHeadshot type
   type Json // Added Json type
 } from "@shared/schema";
@@ -865,6 +866,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching model:', error);
       res.status(500).json({ message: 'Failed to fetch model information' });
+    }
+  });
+
+  // Get all token transactions for a user
+  app.get('/api/tokens/transactions/:id', cors(corsOptions), isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Validate userId
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+      
+      // Check if the requesting user has permission to access these transactions
+      if (!req.user || req.user.id !== userId) {
+        return res.status(403).json({ message: 'Unauthorized to access these transactions' });
+      }
+      
+      // Query the database for all transactions for this user
+      const transactions = await db.query.tokenTransactions.findMany({
+        where: eq(tokenTransactions.userId, userId),
+        orderBy: [desc(tokenTransactions.createdAt)]
+      });
+      
+      res.status(200).json(transactions);
+    } catch (error) {
+      console.error('Error fetching token transactions:', error);
+      res.status(500).json({ message: 'Failed to fetch token transactions' });
     }
   });
 

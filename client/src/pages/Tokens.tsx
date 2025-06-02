@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Coins } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { Coins, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useCreateCheckoutSession } from "@/hooks/use-stripe";
+import { useState } from "react";
 
 type TokenPackage = {
   id: 'SMALL' | 'MEDIUM' | 'LARGE';
@@ -34,36 +36,27 @@ const descriptions = {
 const TokensPage = () => {
   const [, setLocation] = useLocation();
   const { data: tokenPackages = [], isLoading, error } = useTokenPackages();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const createCheckoutSession = useMutation({
-    mutationFn: async (priceId: string) => {
-      console.log('Sending price ID:', priceId);
-      const response = await fetch("/api/stripe/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ priceId }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create checkout session");
+  const { mutate: createCheckoutSession } = useCreateCheckoutSession();
+  
+  const handleCheckout = (priceId: string) => {
+    setLoadingPlan(priceId);
+    createCheckoutSession(priceId, {
+      onSuccess: (data) => {
+        setLoadingPlan(null);
+        // Redirect to Stripe Checkout URL on success
+        window.location.href = data.url;
+      },
+      onError: (error) => {
+        setLoadingPlan(null);
+        if (error.message === "Not authenticated") {
+          setLocation("/login");
+        }
+        console.error("Checkout error:", error);
       }
-      
-      return response.json();
-    },
-    onSuccess: (data) => {
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-    },
-    onError: (error) => {
-      if (error.message === "Not authenticated") {
-        setLocation("/login");
-      }
-      console.error("Checkout error:", error);
-    },
-  });
+    });
+  };
 
   return (
     <div className="container mx-auto py-12">
@@ -98,12 +91,13 @@ const TokensPage = () => {
                 </CardContent>
                 <CardFooter>
                   <Button 
+                    onClick={() => handleCheckout(pkg.priceId)}
+                    disabled={!!loadingPlan}
                     className="w-full" 
                     variant={pkg.highlight ? "default" : "outline"}
-                    onClick={() => createCheckoutSession.mutate(pkg.priceId)}
-                    disabled={createCheckoutSession.isPending}
                   >
-                    {createCheckoutSession.isPending ? "Processing..." : "Purchase"}
+                    {loadingPlan === pkg.priceId ? 'Processing...' : 'Purchase'}
+                    {loadingPlan === pkg.priceId && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                   </Button>
                 </CardFooter>
               </Card>

@@ -128,7 +128,7 @@ export const useCompletedModel = () => {
         // If the API is guaranteed to return only one relevant model or an empty array, this logic might simplify.
         const completed = data.find(model => model.status === 'completed');
         if (completed && completed.id) {
-          return completed.id as string; // Assuming ID is a string
+          return completed.id as number; // Assuming ID is a number
         }
       }
       return null; // No completed model found

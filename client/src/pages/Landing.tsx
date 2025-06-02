@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, RefObject } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 type StyleKey = 'professional' | 'creative' | 'fantasy' | 'casual';
 
@@ -10,8 +10,8 @@ interface DemoPerson {
   styles: Record<StyleKey, string>;
 }
 import useEmblaCarousel from 'embla-carousel-react';
-import { useExampleHeadshots } from '@/hooks/use-headshots';
 import { LoginButton, AuthState } from '@/components/LoginButton';
+import { useCreateCheckoutSession } from '@/hooks/use-stripe';
 import { 
   CheckCircle, 
   X, 
@@ -40,6 +40,9 @@ const Landing = () => {
   const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
   const [quizResult, setQuizResult] = useState<string | null>(null);
   const [authState, setAuthState] = useState<AuthState | null>(null);
+  const [location, setLocation] = useLocation();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { mutate: createCheckoutSession } = useCreateCheckoutSession();
   
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
@@ -73,6 +76,42 @@ const Landing = () => {
       }
     }
   }, []);
+
+  const handleCheckout = (priceId: string) => {
+    if (!authState?.isAuthenticated) {
+      setLocation('/login');
+      return;
+    }
+    
+    setLoadingPlan(priceId);
+    createCheckoutSession(priceId, {
+      onSuccess: (data) => {
+        setLoadingPlan(null);
+        window.location.href = data.url;
+      },
+      onError: (error) => {
+        setLoadingPlan(null);
+        console.error('Checkout error:', error);
+      }
+    });
+  };
+
+  const handleGetStarted = async () => {
+    if (!authState?.isAuthenticated) {
+      setLocation('/login');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/models');
+      const models = await response.json();
+      const model = models[models.length - 1];
+      setLocation(models.length > 0 ? '/generate/' + model.id : '/upload');
+    } catch (error) {
+      // Fallback to upload page if check fails
+      setLocation('/upload');
+    }
+  };
 
   const HOST = import.meta.env.VITE_CLIENT_URL;
   //const exampleHeadshots = useExampleHeadshots();
@@ -134,7 +173,8 @@ const Landing = () => {
         "HD downloads",
         "24-hour delivery"
       ],
-      isPopular: false
+      isPopular: false,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_10_TOKENS,
     },
     {
       name: "Professional",
@@ -147,7 +187,8 @@ const Landing = () => {
         "LinkedIn optimization",
         "Minor retouching included"
       ],
-      isPopular: true
+      isPopular: true,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_30_TOKENS,
     },
     {
       name: "Enterprise",
@@ -161,7 +202,8 @@ const Landing = () => {
         "Advanced retouching included",
         "Dedicated support"
       ],
-      isPopular: false
+      isPopular: false,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_70_TOKENS,
     }
   ];
 
@@ -381,11 +423,11 @@ const Landing = () => {
           
           <div className="flex space-x-3">
             <LoginButton onAuthState={setAuthState} />
-            <Link href={authState && authState.isAuthenticated ? "/upload" : "/login"}>
-            <button className="px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium transition">
+            <button
+              onClick={handleGetStarted}
+              className="px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium transition">
               Get Started
             </button>
-            </Link>
           </div>
         </div>
       </nav>
@@ -420,11 +462,11 @@ const Landing = () => {
               </div>
               
               <div className="flex flex-wrap gap-4">
-              <Link href={authState && authState.isAuthenticated ? "/upload" : "/login"}>
-                <button className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium flex items-center gap-2 transition shadow-lg shadow-purple-900/20">
+                <button
+                  onClick={handleGetStarted}
+                  className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white font-medium flex items-center gap-2 transition shadow-lg shadow-purple-900/20">
                   Generate Your Headshot <ArrowRight size={16} />
                 </button>
-                </Link>
                 <button onClick={startQuiz} className="px-6 py-3 rounded-lg bg-gray-800/50 border border-purple-500/20 hover:border-purple-500/50 text-gray-200 flex items-center gap-2 transition">
                   Find Your Style <Sparkles size={16} className="text-purple-400" />
                 </button>
@@ -804,14 +846,14 @@ const Landing = () => {
                   </div>
                 )}
                 
-                <div className="p-6">
+                <div className="p-6 h-full flex flex-col">
                   <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                   <div className="mb-6">
                     <span className="text-4xl font-bold">${plan.price}</span>
                     <span className="text-gray-400 text-sm ml-1">one-time</span>
                   </div>
                   
-                  <div className="space-y-3 mb-8">
+                  <div className="space-y-3 mb-8 flex-grow">
                     {plan.features.map((feature, i) => (
                       <div key={i} className="flex items-start">
                         <CheckCircle size={20} className="text-purple-400 mr-3 flex-shrink-0 mt-0.5" />
@@ -820,15 +862,17 @@ const Landing = () => {
                     ))}
                   </div>
                   
-                  <a href={authState && authState.isAuthenticated ? "/tokens" : "/login"}>
-                    <button className={`w-full py-3 rounded-lg font-medium transition ${
+                    <button
+                    onClick={() => handleCheckout(plan.priceId)}
+                    disabled={loadingPlan === plan.priceId}
+                    className={`w-full py-3 rounded-lg font-medium transition ${
                       plan.isPopular 
                         ? 'bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white' 
                         : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-                    }`}>
-                      Select {plan.name}
-                    </button>
-                  </a>
+                    }`}
+                  >
+                    {loadingPlan === plan.priceId ? 'Processing...' : `Select ${plan.name}`}
+                  </button>
                 </div>
               </div>
             ))}
